@@ -1,0 +1,4 @@
+#!/bin/sh
+# Loophole launcher — runs the scanner with the system Python 3.
+# Usage: loophole scan <path> [options]
+exec python3 "$(dirname "$0")/loophole.py" "$@"
