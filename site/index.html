@@ -4,112 +4,276 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Loophole — Zero-Dependency Static Security Scanner</title>
-<meta name="description" content="Loophole is a static security scanner in a single Python file with zero dependencies. It finds hardcoded secrets, SQL injection, XSS, command injection and more across JavaScript/TypeScript, Python, Go and PHP — with taint tracking and a fix suggestion for every finding.">
+<meta name="description" content="Loophole is a static security scanner in a single Python file with zero dependencies. 35 checks for secrets, injection, XSS and more across JavaScript/TypeScript, Python, Go and PHP — with taint tracking and a fix for every finding.">
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png">
 <style>
-  :root{
-    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1626; --line:#1f2c47;
-    --text:#e8eef7; --muted:#9db1cc; --accent:#4da3ff; --accent2:#37d99a;
-    --warn:#ffb454; --crit:#ff6b6b; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
-  a{color:var(--accent);text-decoration:none}
-  a:hover{text-decoration:underline}
-  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
-  header{border-bottom:1px solid var(--line);background:var(--panel2)}
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;color:var(--text)}
-  .brand img{width:34px;height:34px;border-radius:8px}
-  .nav .links a{margin-left:18px;color:var(--muted);font-size:.95rem}
-  .nav .links a:hover{color:var(--text);text-decoration:none}
-  .hero{text-align:center;padding:72px 0 48px}
-  .hero img{width:110px;height:110px;border-radius:24px;box-shadow:0 12px 40px rgba(77,163,255,.25)}
-  .hero h1{font-size:3rem;margin:22px 0 6px;letter-spacing:-.02em}
-  .hero .tag{font-size:1.25rem;color:var(--muted);max-width:640px;margin:0 auto}
-  .hero .tag strong{color:var(--text)}
-  .cta{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn{display:inline-block;padding:12px 22px;border-radius:10px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--text)}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06182e}
-  .btn:hover{text-decoration:none;filter:brightness(1.08)}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:44px 0}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
-  .stat .n{font-size:1.9rem;font-weight:800;color:var(--accent)}
-  .stat .l{color:var(--muted);font-size:.9rem;margin-top:2px}
-  section{padding:34px 0}
-  h2{font-size:1.6rem;margin-bottom:14px;letter-spacing:-.01em}
-  p.lead{color:var(--muted);max-width:720px}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
-  .card h3{font-size:1.02rem;margin-bottom:6px}
-  .card p{color:var(--muted);font-size:.93rem}
-  pre{background:#070d18;border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;font-family:var(--mono);font-size:.86rem;line-height:1.55;margin-top:16px}
-  .c{color:#5b7292}.k{color:#4da3ff}.s{color:#37d99a}.crit{color:var(--crit)}.high{color:var(--warn)}
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
-  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 40px;color:var(--muted);font-size:.92rem}
-  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
-  @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.grid,.steps{grid-template-columns:1fr}.hero h1{font-size:2.3rem}}
+:root{
+  --bg:#0a0c10; --bg2:#0d1117; --panel:#0d1117; --panel2:#11161f;
+  --line:#1c2330; --line2:#262f42;
+  --text:#e6edf3; --muted:#8b98a9; --faint:#5b6b80;
+  --blue:#58a6ff; --green:#3fb950; --purple:#bc8cff;
+  --crit:#f85149; --high:#d29922; --med:#58a6ff;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(88,166,255,.35)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono)}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;font-size:1.05rem}
+.brand:hover{text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:7px}
+.ver{font-family:var(--mono);font-size:.7rem;color:var(--green);border:1px solid rgba(63,185,80,.4);padding:2px 7px;border-radius:99px;margin-left:2px}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{color:var(--muted);font-size:.92rem}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+.gh-btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);color:var(--text)!important;padding:7px 14px;border-radius:8px;font-weight:600;font-size:.88rem}
+.gh-btn:hover{border-color:var(--faint)}
+@media(max-width:720px){.nav-links a:not(.gh-btn){display:none}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:84px 0 30px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(620px 320px at 18% -6%,rgba(88,166,255,.13),transparent 60%),
+  radial-gradient(520px 300px at 88% -10%,rgba(188,140,255,.10),transparent 60%);pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(139,152,169,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(139,152,169,.05) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse 90% 62% at 50% 0%,#000 30%,transparent 75%);pointer-events:none}
+.hero-in{position:relative;z-index:1;text-align:center}
+.eyebrow{font-family:var(--mono);font-size:.8rem;color:var(--green);letter-spacing:.04em}
+.hero h1{font-size:3.4rem;line-height:1.08;letter-spacing:-.03em;font-weight:800;margin:18px auto 16px;max-width:820px}
+.hero h1 .grad{background:linear-gradient(92deg,#58a6ff 10%,#bc8cff 55%,#3fb950 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.sub{color:var(--muted);font-size:1.16rem;max-width:680px;margin:0 auto}
+.hero p.sub strong{color:var(--text)}
+.cta{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:9px;font-weight:600;font-size:.95rem;border:1px solid var(--line2);background:var(--panel2);color:var(--text)}
+.btn:hover{text-decoration:none;border-color:var(--faint)}
+.btn.primary{background:#e6edf3;border-color:#e6edf3;color:#0a0c10}
+.btn.primary:hover{background:#fff}
+.hero-meta{margin-top:20px;font-family:var(--mono);font-size:.8rem;color:var(--faint)}
+.hero-meta span{margin:0 8px}
+
+/* ---------- terminal ---------- */
+.term{position:relative;z-index:1;max-width:860px;margin:46px auto 0;background:#0d1117;border:1px solid var(--line2);border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(88,166,255,.04);text-align:left;overflow:hidden}
+.term-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:#11161f}
+.dot{width:12px;height:12px;border-radius:50%}
+.term-title{margin-left:8px;font-family:var(--mono);font-size:.76rem;color:var(--faint)}
+.term-body{padding:18px 20px 20px;font-family:var(--mono);font-size:.82rem;line-height:1.65;overflow-x:auto;white-space:pre;color:#c9d4e3}
+.t-prompt{color:var(--green)} .t-cmd{color:#e6edf3}
+.t-dim{color:var(--faint)} .t-file{color:var(--blue)}
+.t-crit{color:var(--crit);font-weight:700} .t-high{color:var(--high);font-weight:700}
+.t-why{color:var(--muted)} .t-fix{color:var(--green)} .t-taint{color:var(--purple)}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--green);vertical-align:-2px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.fadein{animation:fade .9s ease .25s both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:54px 0 6px;overflow:hidden}
+.stat{padding:22px;text-align:center}
+.stat+.stat{border-left:1px solid var(--line)}
+.stat .n{font-size:1.75rem;font-weight:800;letter-spacing:-.02em}
+.stat .l{color:var(--faint);font-size:.84rem;margin-top:2px;font-family:var(--mono)}
+@media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}.stat+.stat{border-left:none}.stat{border-top:1px solid var(--line)}}
+
+/* ---------- sections ---------- */
+section{padding:56px 0 8px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.sec-num{font-family:var(--mono);color:var(--green);font-size:.9rem}
+h2{font-size:1.85rem;letter-spacing:-.02em;font-weight:750}
+.lead{color:var(--muted);max-width:760px;margin-bottom:22px}
+.lead strong{color:var(--text)}
+
+/* rules table */
+table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);font-size:.92rem}
+th{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(88,166,255,.03)}
+td.id{font-family:var(--mono);color:var(--blue);white-space:nowrap;font-size:.85rem}
+td.what{color:var(--text)}
+td.lang{color:var(--faint);font-family:var(--mono);font-size:.8rem;white-space:nowrap}
+.pill{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.03em}
+.pill.crit{color:var(--crit);border:1px solid rgba(248,81,73,.45);background:rgba(248,81,73,.08)}
+.pill.high{color:var(--high);border:1px solid rgba(210,153,34,.45);background:rgba(210,153,34,.08)}
+.pill.med{color:var(--med);border:1px solid rgba(88,166,255,.45);background:rgba(88,166,255,.08)}
+.table-note{color:var(--faint);font-size:.86rem;margin-top:12px;font-family:var(--mono)}
+
+/* code panels */
+.code{background:#0d1117;border:1px solid var(--line2);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.code-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line);background:#11161f;font-family:var(--mono);font-size:.74rem;color:var(--faint)}
+.code pre{padding:16px 18px;font-family:var(--mono);font-size:.84rem;line-height:1.6;overflow-x:auto;color:#c9d4e3}
+.k{color:#ff7b72}.s{color:#a5d6ff}.f{color:#d2a8ff}.c{color:#5b6b80}.n{color:#79c0ff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+.step .no{font-family:var(--mono);color:var(--green);font-size:.8rem}
+.step h3{margin:8px 0 6px;font-size:1.05rem}
+.step p{color:var(--muted);font-size:.93rem}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+
+/* inputs table small */
+.mini td:first-child{font-family:var(--mono);color:var(--blue);font-size:.85rem;white-space:nowrap}
+
+/* footer */
+footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;background:var(--bg2)}
+.foot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px}
+.foot h4{font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px}
+.foot a{display:block;color:var(--muted);font-size:.92rem;margin-bottom:8px}
+.foot a:hover{color:var(--text)}
+.foot .about{color:var(--muted);font-size:.92rem;max-width:300px}
+.foot-base{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--faint);font-size:.84rem;font-family:var(--mono)}
+@media(max-width:820px){.foot{grid-template-columns:1fr 1fr}.hero h1{font-size:2.4rem}}
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap nav">
-    <a class="brand" href="/"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole</a>
-    <div class="links">
-      <a href="https://github.com/rootsiemen/loophole">GitHub</a>
-      <a href="https://github.com/rootsiemen/loophole/releases">Releases</a>
-      <a href="https://github.com/rootsiemen/loophole/issues">Issues</a>
+
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole <span class="ver">v1.0.0</span></a>
+    <div class="nav-links">
+      <a href="#rules">Rules</a>
+      <a href="#usage">Usage</a>
+      <a href="#action">GitHub Action</a>
+      <a href="#contribute">Contribute</a>
+      <a class="gh-btn" href="https://github.com/rootsiemen/loophole"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="eyebrow">// SAST · SECRETS · ZERO DEPENDENCIES</div>
+    <h1>Find the security holes in your code — <span class="grad">before someone else does.</span></h1>
+    <p class="sub">Loophole is a static security scanner that ships as <strong>one Python file</strong> with <strong>zero dependencies</strong>. Point it at a codebase and it finds hardcoded secrets, injection flaws, XSS and more — then tells you <strong>why each one matters and how to fix it</strong>.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/rootsiemen/loophole">Get Loophole — it's free</a>
+      <a class="btn" href="#output">See a real scan ↓</a>
+    </div>
+    <div class="hero-meta"><span>MIT LICENSE</span>·<span>PYTHON 3.8+</span>·<span>NO PIP INSTALL</span>·<span>RUNS OFFLINE</span></div>
+
+    <div class="term fadein" id="output">
+      <div class="term-bar"><span class="dot" style="background:#f85149"></span><span class="dot" style="background:#d29922"></span><span class="dot" style="background:#3fb950"></span><span class="term-title">zsh — loophole scan</span></div>
+      <div class="term-body"><span class="t-prompt">➜ ~</span> <span class="t-cmd">python3 loophole.py scan ./api-server</span>
+
+<span style="color:#e6edf3;font-weight:700">Loophole found 55 issue(s): 9 critical, 29 high, 17 medium</span>
+
+<span class="t-crit">CRITICAL</span> CMD001 Command injection via child_process (JS/TS)
+  <span class="t-file">src/run.js:33</span>  › exec(cmd, (err, out) =&gt; res.send(out));
+  <span class="t-taint">taint: req.query.cmd → cmd → exec</span>
+  <span class="t-why">why: user input reaching a shell lets attackers append commands that run with the app's privileges — full server compromise.</span>
+  <span class="t-fix">fix: use execFile/spawn with an argument array — never build shell strings from input.</span>
+
+<span class="t-crit">CRITICAL</span> SEC003 Private key in source code
+  <span class="t-file">config.py:6</span>  › PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
+  <span class="t-why">why: a committed private key is a fully compromised identity — anyone who clones the repo owns it.</span>
+  <span class="t-fix">fix: revoke the keypair, purge it from git history, load keys from a secrets manager.</span>
+
+<span class="t-high">HIGH</span>     SQLI002 SQL injection via string formatting (Python)
+  <span class="t-file">db.py:16</span>  › cur.execute("SELECT * FROM users WHERE id = %s" % uid)
+  <span class="t-fix">fix: parameterized queries — let the driver separate code from data.</span>
+
+<span class="t-dim">… 52 more findings</span>
+<span class="t-prompt">➜ ~</span> <span class="cursor"></span></div>
     </div>
   </div>
 </header>
 
 <div class="wrap">
-  <div class="hero">
-    <img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">
-    <h1>Loophole</h1>
-    <p class="tag">A static security scanner in <strong>a single Python file</strong> with <strong>zero dependencies</strong>. Point it at a codebase and it finds the security holes — with a plain-English explanation and a fix for every finding.</p>
-    <div class="cta">
-      <a class="btn primary" href="https://github.com/rootsiemen/loophole">Get it on GitHub</a>
-      <a class="btn" href="#action">Use the GitHub Action</a>
-    </div>
-  </div>
-
   <div class="stats">
-    <div class="stat"><div class="n">35</div><div class="l">vulnerability rules</div></div>
-    <div class="stat"><div class="n">5</div><div class="l">languages: JS/TS, Python, Go, PHP</div></div>
-    <div class="stat"><div class="n">0</div><div class="l">dependencies — pure stdlib</div></div>
-    <div class="stat"><div class="n">MIT</div><div class="l">free and open source</div></div>
+    <div class="stat"><div class="n">35</div><div class="l">security checks</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">languages covered</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">dependencies</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">file — that's the install</div></div>
   </div>
+  <p class="table-note" style="text-align:center">DOGFOODED — LOOPHOLE SCANS ITS OWN CODEBASE CLEAN · GITHUB ACTION VERIFIED IN CI · SARIF → GITHUB SECURITY TAB</p>
 
   <section>
-    <h2>What it catches</h2>
-    <p class="lead">Thirty-five rule classes across the bugs that actually ship to production — each finding explains <em>why</em> it is dangerous and <em>how</em> to fix it.</p>
-    <div class="grid">
-      <div class="card"><h3>Hardcoded secrets</h3><p>API keys, passwords, tokens and private keys committed straight into source files.</p></div>
-      <div class="card"><h3>Injection</h3><p>SQL injection, command injection, XSS and unsafe deserialization sinks.</p></div>
-      <div class="card"><h3>Taint tracking</h3><p>User input is followed from source to sink, so findings are real flows, not just keyword matches.</p></div>
-      <div class="card"><h3>Weak crypto</h3><p>Broken hashes, ECB mode, insecure randomness and disabled TLS verification.</p></div>
-      <div class="card"><h3>Traversal &amp; SSRF</h3><p>Path traversal, server-side request forgery and unsafe file handling.</p></div>
-      <div class="card"><h3>Web misconfigurations</h3><p>Debug mode left on, permissive CORS, missing security headers and more.</p></div>
+    <div class="sec-head"><span class="sec-num">Fig. 01</span><h2>Built like a tool developers actually keep</h2></div>
+    <div class="steps">
+      <div class="step"><div class="no">TAINT TRACKING</div><h3>Data-flow, not grep</h3><p>Loophole follows user input from source to sink — <span class="mono" style="color:var(--purple)">req.query.cmd → cmd → exec</span> — so findings are real, reachable flows instead of keyword noise.</p></div>
+      <div class="step"><div class="no">WHY + FIX</div><h3>Every finding teaches</h3><p>Each result explains the risk in plain English and ships the concrete fix. No cryptic rule codes that send you to a wiki — the answer is in the output.</p></div>
+      <div class="step"><div class="no">ZERO SETUP</div><h3>No platform. No account.</h3><p>No SaaS onboarding, no config files, no telemetry, no API keys. If Python 3 runs — laptop, CI runner, air-gapped box — Loophole runs. Offline, in seconds.</p></div>
     </div>
   </section>
 
-  <section>
-    <h2>Run it in seconds</h2>
-    <p class="lead">No install, no platform, no account. If Python 3 runs, Loophole runs.</p>
-    <pre><span class="c"># clone and scan — that's it</span>
+  <section id="rules">
+    <div class="sec-head"><span class="sec-num">Fig. 02</span><h2>The rule catalog</h2></div>
+    <p class="lead">Thirty-five checks across the vulnerability classes that actually ship to production. A sample of the catalog — severities and titles below are <strong>verbatim from real scans</strong>.</p>
+    <table>
+      <thead><tr><th>Rule</th><th>Severity</th><th>What it catches</th><th>Language</th></tr></thead>
+      <tbody>
+        <tr><td class="id">SEC001</td><td><span class="pill crit">CRITICAL</span></td><td class="what">Hardcoded API key / token / secret</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">SEC003</td><td><span class="pill crit">CRITICAL</span></td><td class="what">Private key in source code</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">SEC002</td><td><span class="pill high">HIGH</span></td><td class="what">Hardcoded password</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">SEC004</td><td><span class="pill crit">CRITICAL</span></td><td class="what">Hardcoded AWS access key ID</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">CMD001–004</td><td><span class="pill crit">CRITICAL</span></td><td class="what">Command injection — child_process, os.system, exec.Command, system()</td><td class="lang">JS · PY · GO · PHP</td></tr>
+        <tr><td class="id">SQLI001–004</td><td><span class="pill high">HIGH</span></td><td class="what">SQL injection via string building, formatting and concatenation</td><td class="lang">JS · PY · GO · PHP</td></tr>
+        <tr><td class="id">EVAL001</td><td><span class="pill crit">CRITICAL</span></td><td class="what">eval() with dynamic input</td><td class="lang">JS · PY · PHP</td></tr>
+        <tr><td class="id">XSS001</td><td><span class="pill high">HIGH</span></td><td class="what">Dynamic HTML via innerHTML</td><td class="lang">JS/TS</td></tr>
+        <tr><td class="id">XSS003</td><td><span class="pill med">MEDIUM</span></td><td class="what">dangerouslySetInnerHTML used</td><td class="lang">REACT</td></tr>
+        <tr><td class="id">XSS004</td><td><span class="pill high">HIGH</span></td><td class="what">Unescaped echo of user input</td><td class="lang">PHP</td></tr>
+        <tr><td class="id">SSRF001</td><td><span class="pill high">HIGH</span></td><td class="what">SSRF: user-influenced URL in outbound request</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">PATH001</td><td><span class="pill high">HIGH</span></td><td class="what">File access with user-influenced path</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">TLS001</td><td><span class="pill high">HIGH</span></td><td class="what">TLS verification disabled</td><td class="lang">ALL</td></tr>
+        <tr><td class="id">JWT001</td><td><span class="pill high">HIGH</span></td><td class="what">JWT decoded without verification</td><td class="lang">JS/TS</td></tr>
+        <tr><td class="id">CRY001</td><td><span class="pill high">HIGH</span></td><td class="what">MD5 used for password hashing</td><td class="lang">ALL</td></tr>
+      </tbody>
+    </table>
+    <p class="table-note">+ CRY002–004 · RAND001–003 · AUTH001 · CORS001 · DBG001 · ERR001 · PATH002 · XSS002 · SEC005 — FULL CATALOG IN THE REPO</p>
+  </section>
+
+  <section id="usage">
+    <div class="sec-head"><span class="sec-num">Fig. 03</span><h2>Up and running in one command</h2></div>
+    <p class="lead">Clone it, run it. Machine-readable output for pipelines, human output for people, and <strong>--fix-dry</strong> prints mechanical fix suggestions as diffs — it never touches your files uninvited.</p>
+    <div class="grid2">
+      <div class="code">
+        <div class="code-bar"><span class="dot" style="background:#f85149"></span><span class="dot" style="background:#d29922"></span><span class="dot" style="background:#3fb950"></span>&nbsp; terminal</div>
+        <pre><span class="c"># clone — that's the entire install</span>
 git clone https://github.com/rootsiemen/loophole
+<span class="k">cd</span> loophole
+
+<span class="c"># scan a project</span>
 python3 loophole.py scan ./your-project
 
-<span class="crit">CRITICAL</span> Hardcoded AWS secret key — config.js:4
-<span class="high">HIGH</span>     SQL injection (tainted input reaches query) — db.py:31
-         <span class="c">fix: use parameterized queries / prepared statements</span></pre>
+<span class="c"># only criticals and highs, specific folder</span>
+python3 loophole.py scan ./src \
+  --severity critical,high
+
+<span class="c"># preview fixes as diffs (dry run)</span>
+python3 loophole.py scan . --fix-dry</pre>
+      </div>
+      <div class="code">
+        <div class="code-bar"><span class="dot" style="background:#f85149"></span><span class="dot" style="background:#d29922"></span><span class="dot" style="background:#3fb950"></span>&nbsp; pipeline output</div>
+        <pre><span class="c"># JSON for your own tooling</span>
+python3 loophole.py scan . --json
+
+<span class="c"># SARIF 2.1.0 for code scanning UIs</span>
+python3 loophole.py scan . --sarif
+
+<span class="c"># exit code 1 on critical/high findings,</span>
+<span class="c"># so CI fails the build exactly when it should</span>
+python3 loophole.py scan . ; <span class="k">echo</span> $?</pre>
+      </div>
+    </div>
   </section>
 
   <section id="action">
-    <h2>GitHub Action</h2>
-    <p class="lead">Run Loophole in CI and publish results straight to your repository's <strong>Security</strong> tab via SARIF.</p>
-    <pre><span class="k">name:</span> <span class="s">Security scan</span>
+    <div class="sec-head"><span class="sec-num">Fig. 04</span><h2>First-class in GitHub Actions</h2></div>
+    <p class="lead">The official Action runs Loophole on every push and pull request and uploads SARIF results to your repository's <strong>Security tab</strong> — findings show up where your team already reviews code.</p>
+    <div class="grid2">
+      <div class="code">
+        <div class="code-bar"><span class="dot" style="background:#f85149"></span><span class="dot" style="background:#d29922"></span><span class="dot" style="background:#3fb950"></span>&nbsp; .github/workflows/security.yml</div>
+        <pre><span class="k">name:</span> <span class="s">Security scan</span>
 <span class="k">on:</span> [push, pull_request]
 <span class="k">permissions:</span>
   <span class="k">security-events:</span> write
@@ -118,24 +282,50 @@ python3 loophole.py scan ./your-project
     <span class="k">runs-on:</span> ubuntu-latest
     <span class="k">steps:</span>
       - <span class="k">uses:</span> actions/checkout@v4
-      - <span class="k">uses:</span> rootsiemen/loophole@v1</pre>
+      - <span class="k">uses:</span> <span class="f">rootsiemen/loophole@v1</span></pre>
+      </div>
+      <div>
+        <table class="mini">
+          <thead><tr><th>Input</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>path</td><td style="color:var(--muted)">Directory to scan (default: repo root)</td></tr>
+            <tr><td>severity</td><td style="color:var(--muted)">Minimum severity to report</td></tr>
+            <tr><td>upload-sarif</td><td style="color:var(--muted)">Publish results to code scanning</td></tr>
+            <tr><td>fail-on-findings</td><td style="color:var(--muted)">Fail the workflow on critical/high</td></tr>
+          </tbody>
+        </table>
+        <p class="table-note">PINNED AS @v1 · SELF-TESTED IN CI ON EVERY PUSH</p>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <h2>Contribute</h2>
-    <p class="lead">Loophole is maintained in the open and built to be extended: a new rule is one focused function plus tests. Good first issues are labelled, pull requests get reviewed quickly, and the scanner dogfoods itself — it scans its own codebase clean.</p>
+  <section id="contribute">
+    <div class="sec-head"><span class="sec-num">Fig. 05</span><h2>Open source, built in the open</h2></div>
+    <p class="lead">Loophole is MIT-licensed and maintained in public. A new rule is one focused function plus fixtures — the codebase is a single readable file, so your first contribution is an afternoon, not a week.</p>
     <div class="steps">
-      <div class="card"><h3>1. Pick an issue</h3><p>Start with a <a href="https://github.com/rootsiemen/loophole/labels/good%20first%20issue">good first issue</a> or propose a new rule.</p></div>
-      <div class="card"><h3>2. Read the guide</h3><p><a href="https://github.com/rootsiemen/loophole/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> covers setup, tests and rule anatomy.</p></div>
-      <div class="card"><h3>3. Open a PR</h3><p>Small, focused pull requests with tests — feedback comes the same day.</p></div>
+      <div class="step"><div class="no">STEP 1</div><h3>Pick an issue</h3><p>Start with a <a href="https://github.com/rootsiemen/loophole/labels/good%20first%20issue">good first issue</a> — three new-rule proposals are already scoped and waiting.</p></div>
+      <div class="step"><div class="no">STEP 2</div><h3>Read the guide</h3><p><a href="https://github.com/rootsiemen/loophole/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> documents the rule anatomy, the families, and the fixture workflow.</p></div>
+      <div class="step"><div class="no">STEP 3</div><h3>Ship a rule</h3><p>Small PR, tests included, self-scan clean. Reviews land the same day — that's a promise kept so far on every PR.</p></div>
+    </div>
+    <div class="cta" style="justify-content:flex-start;margin-top:30px">
+      <a class="btn primary" href="https://github.com/rootsiemen/loophole">Star it on GitHub</a>
+      <a class="btn" href="https://github.com/rootsiemen/loophole/releases/tag/v1.0.0">v1.0.0 release notes</a>
     </div>
   </section>
 </div>
 
 <footer>
   <div class="wrap">
-    <span>Loophole — MIT licensed. Created and maintained by <a href="https://github.com/rootsiemen">@rootsiemen</a>.</span>
-    <span><a href="https://github.com/rootsiemen/loophole/blob/main/SECURITY.md">Security policy</a> · <a href="https://github.com/rootsiemen/loophole/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></span>
+    <div class="foot">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:12px"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole</a>
+        <p class="about">A zero-dependency static security scanner in a single Python file. Built with the standard library only — because your security tool shouldn't be a supply-chain risk itself.</p>
+      </div>
+      <div><h4>Project</h4><a href="https://github.com/rootsiemen/loophole">Repository</a><a href="https://github.com/rootsiemen/loophole/releases">Releases</a><a href="https://github.com/rootsiemen/loophole/issues">Issues</a><a href="#rules">Rule catalog</a></div>
+      <div><h4>Resources</h4><a href="#usage">Usage guide</a><a href="#action">GitHub Action</a><a href="https://github.com/rootsiemen/loophole/blob/main/CONTRIBUTING.md">Contributing</a><a href="https://github.com/rootsiemen/loophole/labels/good%20first%20issue">Good first issues</a></div>
+      <div><h4>Trust</h4><a href="https://github.com/rootsiemen/loophole/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/rootsiemen/loophole/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a><a href="https://github.com/rootsiemen/loophole/blob/main/LICENSE">MIT License</a></div>
+    </div>
+    <div class="foot-base"><span>© 2026 Loophole — created &amp; maintained by <a href="https://github.com/rootsiemen" style="display:inline;color:var(--muted)">@rootsiemen</a></span><span>PYTHON STDLIB ONLY · NO TELEMETRY · NO ACCOUNTS</span></div>
   </div>
 </footer>
 </body>
