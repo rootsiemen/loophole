@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a bug or a false positive / false negative
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What did Loophole report (or miss)? Paste the finding or the command output.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Command you ran
+      placeholder: python3 loophole.py scan ./my-project
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Smallest code sample that triggers it
+      description: A minimal file Loophole gets wrong. False-positive samples usually become regression fixtures.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Loophole version and Python version
+      placeholder: v1.0.0, Python 3.12

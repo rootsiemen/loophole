@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loophole — Zero-Dependency Static Security Scanner</title>
+<meta name="description" content="Loophole is a static security scanner in a single Python file with zero dependencies. It finds hardcoded secrets, SQL injection, XSS, command injection and more across JavaScript/TypeScript, Python, Go and PHP — with taint tracking and a fix suggestion for every finding.">
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png">
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2e; --panel2:#0e1626; --line:#1f2c47;
+    --text:#e8eef7; --muted:#9db1cc; --accent:#4da3ff; --accent2:#37d99a;
+    --warn:#ffb454; --crit:#ff6b6b; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{border-bottom:1px solid var(--line);background:var(--panel2)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;color:var(--text)}
+  .brand img{width:34px;height:34px;border-radius:8px}
+  .nav .links a{margin-left:18px;color:var(--muted);font-size:.95rem}
+  .nav .links a:hover{color:var(--text);text-decoration:none}
+  .hero{text-align:center;padding:72px 0 48px}
+  .hero img{width:110px;height:110px;border-radius:24px;box-shadow:0 12px 40px rgba(77,163,255,.25)}
+  .hero h1{font-size:3rem;margin:22px 0 6px;letter-spacing:-.02em}
+  .hero .tag{font-size:1.25rem;color:var(--muted);max-width:640px;margin:0 auto}
+  .hero .tag strong{color:var(--text)}
+  .cta{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 22px;border-radius:10px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06182e}
+  .btn:hover{text-decoration:none;filter:brightness(1.08)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:44px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+  .stat .n{font-size:1.9rem;font-weight:800;color:var(--accent)}
+  .stat .l{color:var(--muted);font-size:.9rem;margin-top:2px}
+  section{padding:34px 0}
+  h2{font-size:1.6rem;margin-bottom:14px;letter-spacing:-.01em}
+  p.lead{color:var(--muted);max-width:720px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{font-size:1.02rem;margin-bottom:6px}
+  .card p{color:var(--muted);font-size:.93rem}
+  pre{background:#070d18;border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;font-family:var(--mono);font-size:.86rem;line-height:1.55;margin-top:16px}
+  .c{color:#5b7292}.k{color:#4da3ff}.s{color:#37d99a}.crit{color:var(--crit)}.high{color:var(--warn)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 40px;color:var(--muted);font-size:.92rem}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.grid,.steps{grid-template-columns:1fr}.hero h1{font-size:2.3rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole</a>
+    <div class="links">
+      <a href="https://github.com/rootsiemen/loophole">GitHub</a>
+      <a href="https://github.com/rootsiemen/loophole/releases">Releases</a>
+      <a href="https://github.com/rootsiemen/loophole/issues">Issues</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">
+    <h1>Loophole</h1>
+    <p class="tag">A static security scanner in <strong>a single Python file</strong> with <strong>zero dependencies</strong>. Point it at a codebase and it finds the security holes — with a plain-English explanation and a fix for every finding.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/rootsiemen/loophole">Get it on GitHub</a>
+      <a class="btn" href="#action">Use the GitHub Action</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">35</div><div class="l">vulnerability rules</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">languages: JS/TS, Python, Go, PHP</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">dependencies — pure stdlib</div></div>
+    <div class="stat"><div class="n">MIT</div><div class="l">free and open source</div></div>
+  </div>
+
+  <section>
+    <h2>What it catches</h2>
+    <p class="lead">Thirty-five rule classes across the bugs that actually ship to production — each finding explains <em>why</em> it is dangerous and <em>how</em> to fix it.</p>
+    <div class="grid">
+      <div class="card"><h3>Hardcoded secrets</h3><p>API keys, passwords, tokens and private keys committed straight into source files.</p></div>
+      <div class="card"><h3>Injection</h3><p>SQL injection, command injection, XSS and unsafe deserialization sinks.</p></div>
+      <div class="card"><h3>Taint tracking</h3><p>User input is followed from source to sink, so findings are real flows, not just keyword matches.</p></div>
+      <div class="card"><h3>Weak crypto</h3><p>Broken hashes, ECB mode, insecure randomness and disabled TLS verification.</p></div>
+      <div class="card"><h3>Traversal &amp; SSRF</h3><p>Path traversal, server-side request forgery and unsafe file handling.</p></div>
+      <div class="card"><h3>Web misconfigurations</h3><p>Debug mode left on, permissive CORS, missing security headers and more.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Run it in seconds</h2>
+    <p class="lead">No install, no platform, no account. If Python 3 runs, Loophole runs.</p>
+    <pre><span class="c"># clone and scan — that's it</span>
+git clone https://github.com/rootsiemen/loophole
+python3 loophole.py scan ./your-project
+
+<span class="crit">CRITICAL</span> Hardcoded AWS secret key — config.js:4
+<span class="high">HIGH</span>     SQL injection (tainted input reaches query) — db.py:31
+         <span class="c">fix: use parameterized queries / prepared statements</span></pre>
+  </section>
+
+  <section id="action">
+    <h2>GitHub Action</h2>
+    <p class="lead">Run Loophole in CI and publish results straight to your repository's <strong>Security</strong> tab via SARIF.</p>
+    <pre><span class="k">name:</span> <span class="s">Security scan</span>
+<span class="k">on:</span> [push, pull_request]
+<span class="k">permissions:</span>
+  <span class="k">security-events:</span> write
+<span class="k">jobs:</span>
+  <span class="k">loophole:</span>
+    <span class="k">runs-on:</span> ubuntu-latest
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> actions/checkout@v4
+      - <span class="k">uses:</span> rootsiemen/loophole@v1</pre>
+  </section>
+
+  <section>
+    <h2>Contribute</h2>
+    <p class="lead">Loophole is maintained in the open and built to be extended: a new rule is one focused function plus tests. Good first issues are labelled, pull requests get reviewed quickly, and the scanner dogfoods itself — it scans its own codebase clean.</p>
+    <div class="steps">
+      <div class="card"><h3>1. Pick an issue</h3><p>Start with a <a href="https://github.com/rootsiemen/loophole/labels/good%20first%20issue">good first issue</a> or propose a new rule.</p></div>
+      <div class="card"><h3>2. Read the guide</h3><p><a href="https://github.com/rootsiemen/loophole/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> covers setup, tests and rule anatomy.</p></div>
+      <div class="card"><h3>3. Open a PR</h3><p>Small, focused pull requests with tests — feedback comes the same day.</p></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>Loophole — MIT licensed. Created and maintained by <a href="https://github.com/rootsiemen">@rootsiemen</a>.</span>
+    <span><a href="https://github.com/rootsiemen/loophole/blob/main/SECURITY.md">Security policy</a> · <a href="https://github.com/rootsiemen/loophole/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></span>
+  </div>
+</footer>
+</body>
+</html>

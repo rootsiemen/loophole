@@ -1,57 +1,73 @@
-# Contributing to Loophole 🕳️
+# Contributing to Loophole
 
-Thanks for wanting to help! Loophole is a zero-dependency static security scanner — one Python file, stdlib only. Here's how to get going.
+Thanks for helping make codebases safer. Loophole is a single-file Python
+scanner (`loophole.py`) with zero dependencies — contributions should keep it
+that way: standard library only, Python 3.8+.
 
-## Quick start
+## Getting started
 
 ```bash
-git clone https://github.com/rootsiemen/loophole.git
+git clone https://github.com/rootsiemen/loophole
 cd loophole
-python3 tests/selftest.py   # all 7 tests must pass
 python3 loophole.py scan ./some-project
+python3 tests/selftest.py   # must pass before you open a PR
 ```
+
+No build step, no virtualenv, no pip install. If it needs a dependency, it
+doesn't belong in Loophole.
+
+## How rules work
+
+Every check is a function in `loophole.py` named `rule_<ID>` taking a scan
+context (`ctx`):
+
+```python
+def rule_SEC042(ctx):
+    ...
+```
+
+Rule IDs are grouped by family:
+
+| Prefix  | Family                                   |
+|---------|------------------------------------------|
+| `SEC`   | secrets, credentials, general security   |
+| `XSS`   | cross-site scripting                     |
+| `CMD`   | command injection                        |
+| `PATH`  | path traversal / file handling           |
+| `CRY`   | weak cryptography                        |
+| `RAND`  | insecure randomness                      |
+| `SSRF`  | server-side request forgery              |
+| others  | single-purpose families: `AUTH`, `CORS`, `DBG`, `ERR`, `EVAL`, `JWT`, `TLS` |
+
+A rule reports a `Finding` with a rule id, severity
+(`critical` / `high` / `medium` / `low`), a plain-English title, file and line,
+the offending snippet — and, most importantly, **why it is dangerous and how to
+fix it**. A finding without a fix suggestion is incomplete.
 
 ## Adding a new rule
 
-Rules live in `loophole.py`. Most are a single call to the `regex_rule` helper:
+1. Pick the next free ID in the family (check the existing `rule_` functions).
+2. Write the rule in `loophole.py`. Prefer precise patterns and, where the
+   family supports it, taint information over raw keyword matching — false
+   positives are the enemy.
+3. Add a fixture: a small vulnerable sample (and a safe counterpart) under
+   `tests/fixtures/`, and cover the rule in `tests/selftest.py`.
+4. Run the self-tests, then scan Loophole itself:
+   `python3 loophole.py scan .` must stay clean.
+5. Open a PR using the *New rule* issue/PR description: what it catches, the
+   vulnerable pattern, and why the safe counterpart is safe.
 
-```python
-def rule_MY001(ctx):
-    """One-line description."""
-    pats = {
-        "py": [r"dangerous_call\s*\("],
-    }
-    return regex_rule(
-        ctx, "MY001", "high", "Short title", pats,
-        "Why this is dangerous (shown to the user).",
-        "How to fix it (shown to the user).")
-```
+## Reporting bugs and false positives
 
-Then register it in the `RULES` list (id, languages, function), add the rule ID to the README rules table, and add vulnerable + clean fixture snippets under `tests/fixtures/` with an `EXPECTED` entry in `tests/selftest.py`.
+A false positive is a bug. Open an issue with the *Bug report* template and
+include the smallest code sample that triggers it — that sample usually
+becomes a regression fixture.
 
-**Rule IDs:** pick the next free number in the right family — `SEC`, `SQLI`, `XSS`, `CMD`, `PATH`, `RAND`, `CRY`, `EVAL`, `SSRF`, `AUTH`, `CORS`, `JWT`, `TLS`, `DBG`, `ERR`, or start a new family (like `DESER`) if nothing fits.
+## Pull requests
 
-## Code style
-
-- Python 3.8+ compatible, **stdlib only** — no new dependencies, ever.
-- Keep false positives at zero: every rule must pass the clean fixtures. If your pattern fires on safe code, tighten it (see `rule_XSS001` for the static-literal skip pattern).
-- Follow the existing style: small functions, docstrings, `why`/`fix` text written for developers, not researchers.
-
-## Tests
-
-```bash
-python3 tests/selftest.py
-```
-
-Vulnerable fixtures must be caught, clean fixtures must produce **zero** findings. Add both sides for any new rule.
-
-## PR process
-
-1. Fork the repo, create a branch (`feat/deser001`, `fix/...`).
-2. Keep PRs focused — one rule or one fix per PR.
-3. Make sure `python3 tests/selftest.py` passes and mention it in the PR.
-4. Maintainer reviews, may request changes, then merges. Be kind in reviews — we're all here to learn.
-
-## Good first issues
-
-Look for the [`good first issue`](https://github.com/rootsiemen/loophole/labels/good%20first%20issue) label — they're scoped to be doable in one sitting. Comment on the issue to claim it so two people don't duplicate work.
+- One rule or one fix per PR; small PRs get reviewed the same day.
+- Keep the single-file design: everything ships in `loophole.py`.
+- Tests must pass (`python3 tests/selftest.py`) and Loophole must scan its
+  own codebase clean.
+- By contributing you agree to the [Code of Conduct](CODE_OF_CONDUCT.md) and
+  that your contribution is licensed under the project's MIT license.

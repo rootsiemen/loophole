@@ -1,0 +1,40 @@
+name: New rule proposal
+description: Propose a new vulnerability rule for Loophole
+title: "[Rule]: "
+labels: ["new-rule"]
+body:
+  - type: input
+    attributes:
+      label: Vulnerability the rule should catch
+      placeholder: e.g. JWT verified with a hardcoded weak secret
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Language(s)
+      options:
+        - JavaScript / TypeScript
+        - Python
+        - Go
+        - PHP
+        - Multiple / all
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Vulnerable example
+      description: Code that SHOULD be flagged.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Safe example
+      description: Similar-looking code that should NOT be flagged — this is what keeps false positives down.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Why it matters / suggested fix
+      description: The risk, and the fix a finding should recommend.
