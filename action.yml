@@ -1,0 +1,83 @@
+name: "Loophole Security Scan"
+description: "Zero-dependency static security scanner for JavaScript, TypeScript, Python, Go and PHP — 35 rules, taint tracking, and a fix suggestion for every finding. Results upload to GitHub code scanning as SARIF."
+author: "Muhamad Raza Haider"
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  path:
+    description: "File or directory to scan, relative to the repository root"
+    required: false
+    default: "."
+  severity:
+    description: "Minimum severity to report: critical, high or medium"
+    required: false
+    default: "medium"
+  exclude:
+    description: "Comma-separated directory names to skip (e.g. node_modules,vendor)"
+    required: false
+    default: ""
+  upload-sarif:
+    description: "Upload the SARIF report to GitHub code scanning (the calling workflow needs the security-events: write permission)"
+    required: false
+    default: "true"
+  fail-on-findings:
+    description: "Fail the workflow step when critical or high severity findings are present"
+    required: false
+    default: "true"
+  python-version:
+    description: "Python version used to run the scanner"
+    required: false
+    default: "3.12"
+
+outputs:
+  sarif-file:
+    description: "Path of the generated SARIF report"
+    value: ${{ steps.scan.outputs.sarif_file }}
+  exit-code:
+    description: "Scanner exit code: 0 = no critical/high findings, 1 = findings present"
+    value: ${{ steps.scan.outputs.exit_code }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Run Loophole scan
+      id: scan
+      shell: bash
+      env:
+        SCAN_PATH: ${{ inputs.path }}
+        SCAN_SEVERITY: ${{ inputs.severity }}
+        SCAN_EXCLUDE: ${{ inputs.exclude }}
+      run: |
+        SARIF_FILE="loophole-results.sarif"
+        args=(scan "$SCAN_PATH" --sarif "$SARIF_FILE" --severity "$SCAN_SEVERITY" --no-color)
+        if [ -n "$SCAN_EXCLUDE" ]; then
+          args+=(--exclude "$SCAN_EXCLUDE")
+        fi
+        set +e
+        python3 "${{ github.action_path }}/loophole.py" "${args[@]}"
+        code=$?
+        set -e
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        echo "sarif_file=$SARIF_FILE" >> "$GITHUB_OUTPUT"
+        echo "Loophole exit code: $code"
+
+    - name: Upload SARIF to code scanning
+      if: ${{ inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: loophole-results.sarif
+        category: loophole
+
+    - name: Fail on findings
+      if: ${{ inputs.fail-on-findings == 'true' && steps.scan.outputs.exit_code != '0' }}
+      shell: bash
+      run: |
+        echo "::error::Loophole found critical or high severity security issues. See the Security tab (code scanning) for details."
+        exit 1

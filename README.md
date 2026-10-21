@@ -54,6 +54,48 @@ python3 loophole.py scan ./src --severity critical --exclude 'tests/*'
 Exit code is **1** when any critical/high finding exists (CI-friendly),
 **0** otherwise.
 
+## GitHub Action
+
+Run Loophole on every push and pull request, with findings uploaded to
+GitHub code scanning (your repo's **Security** tab):
+
+```yaml
+name: Security scan
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write   # required for the SARIF upload
+
+jobs:
+  loophole:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rootsiemen/loophole@v1
+```
+
+Options (all optional):
+
+| Input | Default | What it does |
+|-------|---------|--------------|
+| `path` | `.` | File or directory to scan |
+| `severity` | `medium` | Minimum severity to report: `critical`, `high` or `medium` |
+| `exclude` | — | Comma-separated directory names to skip |
+| `upload-sarif` | `true` | Upload the SARIF report to code scanning |
+| `fail-on-findings` | `true` | Fail the step when critical/high findings exist |
+| `python-version` | `3.12` | Python version used to run the scanner |
+
+Example — scan only `src`, never block the build:
+
+```yaml
+      - uses: rootsiemen/loophole@v1
+        with:
+          path: src
+          fail-on-findings: "false"
+```
+
 ## Example output
 
 ```

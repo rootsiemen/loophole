@@ -1,0 +1,46 @@
+name: Loophole Action self-test
+
+# Exercises the Loophole GitHub Action (action.yml) against the test
+# fixtures on every push and pull request. The fixtures are intentionally
+# vulnerable, so the scan must find issues — but this job must not fail.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  action-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run Loophole Action on fixtures
+        id: loophole
+        uses: ./
+        with:
+          path: tests/fixtures
+          upload-sarif: "false"
+          fail-on-findings: "false"
+
+      - name: Verify SARIF was produced
+        shell: bash
+        run: |
+          test -s loophole-results.sarif
+          python3 -c "
+          import json
+          d = json.load(open('loophole-results.sarif'))
+          n = len(d['runs'][0]['results'])
+          print(f'SARIF results: {n}')
+          assert n > 0, 'expected findings in the vulnerable fixtures'
+          "
+
+      - name: Keep SARIF as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loophole-sarif
+          path: loophole-results.sarif
