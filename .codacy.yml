@@ -1,0 +1,12 @@
+---
+# Codacy configuration for the Loophole repository.
+#
+# tests/ contains the scanner's test suite. The fixture files under
+# tests/fixtures/ (the *_vuln.* files) are INTENTIONALLY vulnerable code
+# samples — they exist so the test suite can prove Loophole detects each
+# vulnerability class, and the *_clean.* counterparts prove it stays quiet
+# on safe code. They are test data, never shipped or executed, so they are
+# excluded from Codacy analysis. The scanner itself (loophole.py) is fully
+# analysed — and passes its own scan with zero findings.
+exclude_paths:
+  - "tests/**"
