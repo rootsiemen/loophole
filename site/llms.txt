@@ -12,10 +12,10 @@
 
 ## Links
 
-- Homepage: https://loophole-sf-c596.vercel.app/
-- All 50 security checks (plain-English catalog): https://loophole-sf-c596.vercel.app/tools.html
-- Other free tools by the same author: https://loophole-sf-c596.vercel.app/other-tools.html
-- About: https://loophole-sf-c596.vercel.app/about.html
+- Homepage: https://www.hakio.tech/
+- All 50 security checks (plain-English catalog): https://www.hakio.tech/tools.html
+- Other free tools by the same author: https://www.hakio.tech/other-tools.html
+- About: https://www.hakio.tech/about.html
 - GitHub repository (source, releases, issues): https://github.com/rootsiemen/loophole
 
 ## Author

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://loophole-sf-c596.vercel.app/sitemap.xml
+Sitemap: https://www.hakio.tech/sitemap.xml

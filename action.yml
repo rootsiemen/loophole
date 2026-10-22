@@ -1,5 +1,5 @@
 name: "Loophole Security Scan"
-description: "Zero-dependency static security scanner for JavaScript, TypeScript, Python, Go and PHP — 35 rules, taint tracking, and a fix suggestion for every finding. Results upload to GitHub code scanning as SARIF."
+description: "Zero-dependency static security scanner for JavaScript, TypeScript, Python, Go and PHP — 50 rules, taint tracking, and a fix suggestion for every finding. Results upload to GitHub code scanning as SARIF."
 author: "Muhamad Raza Haider"
 branding:
   icon: "shield"

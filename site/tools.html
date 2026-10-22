@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>All 50 Security Checks — Loophole</title>
 <meta name="description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
-<link rel="canonical" href="https://loophole-sf-c596.vercel.app/tools.html">
+<link rel="canonical" href="https://www.hakio.tech/tools.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Loophole">
 <meta property="og:title" content="All 50 Security Checks — Loophole">
 <meta property="og:description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
-<meta property="og:url" content="https://loophole-sf-c596.vercel.app/tools.html">
+<meta property="og:url" content="https://www.hakio.tech/tools.html">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="All 50 Security Checks — Loophole">
 <meta name="twitter:description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
@@ -118,7 +118,7 @@ nav{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.82);backdrop-filt
 
 /* ---------- filters ---------- */
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin:30px 0 4px}
-.fchip{font-size:.86rem;font-weight:600;padding:7px 15px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--muted)}
+.fchip{font-size:.86rem;font-weight:600;padding:7px 15px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--muted);cursor:pointer}
 .fchip.on{background:#e6edf3;color:#0a0c10;border-color:#e6edf3;font-weight:700}
 
 /* ---------- tool cards ---------- */
@@ -177,14 +177,14 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     <h1>50 security tools. <span class="grad">Zero jargon.</span></h1>
     <p class="sub">Every check Loophole runs, explained the way you'd explain it to a friend. Big plain name first — the technical code stays small, for those who want it. <strong>All 50 run together in every scan</strong>; nothing to select or configure.</p>
     <div class="filters">
-      <span class="fchip on">All 50 tools</span><span class="fchip">🔑 Passwords &amp; Keys</span><span class="fchip">🗄️ Database</span><span class="fchip">🚪 Entry Points</span><span class="fchip">📁 Files</span><span class="fchip">🔐 Login &amp; Settings</span><span class="fchip">🔒 Encryption</span>
+      <span class="fchip on" data-f="all">All 50 tools</span><span class="fchip" data-f="keys">🔑 Passwords &amp; Keys</span><span class="fchip" data-f="db">🗄️ Database</span><span class="fchip" data-f="entry">🚪 Entry Points</span><span class="fchip" data-f="files">📁 Files</span><span class="fchip" data-f="login">🔐 Login &amp; Settings</span><span class="fchip" data-f="crypto">🔒 Encryption</span>
     </div>
   </div>
 </header>
 
 <div class="wrap">
 
-  <section>
+  <section data-cat="keys">
     <div class="sec-head"><span class="sec-num">01</span><h2>🔑 Passwords &amp; Secret Keys</h2></div>
     <p class="cat-sub">The #1 problem in AI-built apps — secrets typed straight into the code.</p>
     <div class="tgrid">
@@ -197,7 +197,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     </div>
   </section>
 
-  <section>
+  <section data-cat="db">
     <div class="sec-head"><span class="sec-num">02</span><h2>🗄️ Database Safety</h2></div>
     <p class="cat-sub">Ways a visitor can steal, change or delete your data through normal-looking forms.</p>
     <div class="tgrid">
@@ -207,7 +207,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     </div>
   </section>
 
-  <section>
+  <section data-cat="entry">
     <div class="sec-head"><span class="sec-num">03</span><h2>🚪 Hackers' Entry Points</h2></div>
     <p class="cat-sub">Code that lets a visitor run things on your site or server they should never touch.</p>
     <div class="tgrid">
@@ -221,7 +221,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     </div>
   </section>
 
-  <section>
+  <section data-cat="files">
     <div class="sec-head"><span class="sec-num">04</span><h2>📁 Files &amp; Uploads</h2></div>
     <p class="cat-sub">Anything your app opens, unzips or accepts from a visitor.</p>
     <div class="tgrid">
@@ -232,7 +232,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     </div>
   </section>
 
-  <section>
+  <section data-cat="login">
     <div class="sec-head"><span class="sec-num">05</span><h2>🔐 Login, Sessions &amp; Settings</h2></div>
     <p class="cat-sub">The quiet switches that decide whether your logins and settings actually protect you.</p>
     <div class="tgrid">
@@ -248,7 +248,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     </div>
   </section>
 
-  <section>
+  <section data-cat="crypto">
     <div class="sec-head"><span class="sec-num">06</span><h2>🔒 Encryption &amp; Connection Safety</h2></div>
     <p class="cat-sub">How passwords are stored and how data travels.</p>
     <div class="tgrid">
@@ -280,5 +280,21 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     <div class="foot-base"><span>© 2026 Loophole — created &amp; maintained by <a href="https://github.com/rootsiemen" style="display:inline;color:var(--muted)">@rootsiemen</a></span><span>PYTHON STDLIB ONLY · NO TELEMETRY · NO ACCOUNTS</span></div>
   </div>
 </footer>
+<script>
+(function(){
+  var chips=document.querySelectorAll('.fchip');
+  var secs=document.querySelectorAll('section[data-cat]');
+  chips.forEach(function(chip){
+    chip.addEventListener('click',function(){
+      chips.forEach(function(c){c.classList.remove('on');});
+      chip.classList.add('on');
+      var f=chip.getAttribute('data-f');
+      secs.forEach(function(s){
+        s.style.display=(f==='all'||s.getAttribute('data-cat')===f)?'':'none';
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
