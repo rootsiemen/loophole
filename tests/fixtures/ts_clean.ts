@@ -2,8 +2,10 @@
 import express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import helmet from 'helmet';
 
 const app = express();
+app.use(helmet());
 const BASE = '/data';
 const ALLOWED_HOSTS = ['api.example.com'];
 

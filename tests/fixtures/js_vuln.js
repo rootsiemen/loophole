@@ -62,3 +62,42 @@ function makeSessionToken() {
 function renderBio(bio) {
   return '<div dangerouslySetInnerHTML={{ __html: bio }} />'; // XSS003
 }
+
+// --- 2026 expansion: new-rule coverage ---
+const _ = require('lodash');
+_.merge({}, req.body); // PROTO001
+
+app.post('/login', (req, res) => { // NOSQL001
+  User.findOne({ user: req.body.user, pass: req.body.pass }, (err, u) => {
+    res.json({ ok: !!u });
+  });
+});
+
+app.get('/go', (req, res) => {
+  res.redirect(req.query.next); // REDIR001
+});
+
+const weakToken = jwt.verify(req.body.tok, 'secret',
+  { algorithms: ['none', 'HS256'] }); // JWT002
+
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // UPL001
+
+const EMAIL_RE = /(a+)+$/; // REDOS001
+
+function debugLogin(password) {
+  console.log('login attempt for', password); // LOG001
+}
+
+const AdmZip = require('adm-zip');
+new AdmZip('up.zip').extractAllTo('/tmp/out', true); // ZIP001
+
+const tlsOpts = { minVersion: 'TLSv1.1' }; // TLS002
+
+const crypto2 = require('crypto');
+const ecbCipher = crypto2.createCipheriv('aes-256-ecb', key, null); // CRY005
+
+const ldapClient = require('ldapjs').createClient({ url: 'ldap://dc' });
+app.post('/directory', (req, res) => {
+  ldapClient.search('dc=example,dc=com', { filter: `(uid=${req.body.user})` }, () => {}); // LDAP001
+});

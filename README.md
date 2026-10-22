@@ -116,7 +116,7 @@ Loophole found 3 issue(s): 1 critical, 2 high, 0 medium
   (no shell). Never concatenate input into a command string.
 ```
 
-## Rules (35)
+## Rules (50)
 
 | ID | Severity | What it catches |
 |----|----------|-----------------|
@@ -155,6 +155,21 @@ Loophole found 3 issue(s): 1 critical, 2 high, 0 medium
 | TLS001 | high | Disabled TLS verification |
 | DBG001 | medium | Debug mode enabled (`debug=True`, `DEBUG = True`) |
 | ERR001 | medium | Stack traces / exception details sent to client |
+| PROTO001 | high | Prototype pollution via deep-merge of user input (JS/TS) |
+| DESER001 | high | Unsafe deserialization (`pickle`, `unserialize`, `yaml.load`) |
+| NOSQL001 | high | NoSQL injection — input flowing into MongoDB-style queries |
+| XXE001 | high | XML external entity — XML parsers without hardening |
+| REDIR001 | medium | Open redirect — target taken from user input |
+| ZIP001 | high | Zip Slip — archive extraction without path validation |
+| CSRF001 | medium | State-changing routes, no CSRF protection (app-level heuristic) |
+| UPL001 | high | File upload accepted without type validation |
+| REDOS001 | medium | ReDoS — regex with nested quantifiers |
+| JWT002 | high | JWT `none` algorithm / weak secret / verification disabled |
+| TLS002 | medium | Weak/outdated TLS versions (SSLv3, TLS 1.0/1.1) |
+| CRY005 | medium | ECB mode or zero/static IV |
+| LOG001 | medium | Sensitive data (passwords/tokens) written to logs |
+| LDAP001 | high | LDAP injection via unescaped input |
+| HDR001 | medium | Missing security headers (Express/Flask, app-level heuristic) |
 
 Each finding carries: rule id, severity, `file:line`, code snippet, taint
 path (when tracked), *why it matters*, and a *fix suggestion*.

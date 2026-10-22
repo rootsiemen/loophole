@@ -67,3 +67,60 @@ def admin_panel():  # vuln: no access control here
 
 if __name__ == '__main__':
     app.run(debug=True)  # DBG001
+
+
+# --- 2026 expansion: new-rule coverage ---
+import pickle
+import yaml
+import zipfile
+import ssl
+import re
+import ldap
+import xml.dom.minidom
+import jwt
+from flask import redirect
+from pymongo import MongoClient
+
+blob = pickle.loads(data)  # DESER001
+cfg = yaml.load(text)  # DESER001 (no SafeLoader)
+
+zipfile.ZipFile(f).extractall('/tmp/out')  # ZIP001
+
+users = MongoClient().db.users
+
+
+@app.route('/find')
+def find():
+    return str(users.find_one({"user": request.args.get('u')}))  # NOSQL001
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    f = request.files['doc']  # UPL001
+    f.save('/uploads/' + f.filename)
+    return "saved"
+
+
+@app.route('/go')
+def go():
+    return redirect(request.args.get('next'))  # REDIR001
+
+
+payload = jwt.decode(tok, "secret", algorithms=["none"])  # JWT002
+
+ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)  # TLS002
+
+cipher = AES.new(key, AES.MODE_ECB)  # CRY005
+
+
+def log_attempt(token):
+    app.logger.info("login token: " + token)  # LOG001
+
+
+def ldap_lookup(user):
+    return conn.search_s('dc=example,dc=com', ldap.SCOPE_SUBTREE, "(uid=" + user + ")")  # LDAP001
+
+
+EMAIL_RE = re.compile(r"(a+)+$")  # REDOS001
+
+doc = xml.dom.minidom.parseString(xml_data)  # XXE001

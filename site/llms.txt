@@ -1,0 +1,23 @@
+# Loophole
+
+> Loophole is a free, open-source (MIT) static security scanner that ships as a single Python file with zero dependencies. It scans JavaScript/TypeScript, Python, Go and PHP code for security flaws, explains why each finding matters in plain English, and suggests a concrete fix for every finding.
+
+## What it does
+
+- 50 security checks: hardcoded secrets and passwords, SQL / NoSQL / LDAP injection, cross-site scripting (XSS), command injection, eval() code injection, SSRF, prototype pollution, unsafe deserialization, XML external entity (XXE), open redirects, Zip Slip, unsafe file uploads, missing CSRF protection, ReDoS, JWT weaknesses ('none' algorithm, weak secrets, unverified tokens), outdated TLS versions and disabled TLS verification, weak crypto (MD5/SHA-1 password hashing, DES/RC4, hardcoded or zero IVs, ECB mode), predictable random values, secrets written to logs, missing security headers, debug mode and error-detail leaks.
+- Lightweight taint tracking: follows user input from source (request data, form fields, superglobals) to dangerous sinks (queries, shells, HTML output), so findings are real data flows, not keyword noise.
+- Runs fully offline, in seconds, with no account, no config file and no telemetry. Python 3.8+ standard library only.
+- Official GitHub Action (rootsiemen/loophole@v1) runs it on every push and pull request and uploads SARIF results to the repository Security tab.
+- Exit code 1 on critical/high findings, so CI fails exactly when it should; `--fix-dry` prints suggested patches as diffs without modifying files.
+
+## Links
+
+- Homepage: https://loophole-sf-c596.vercel.app/
+- All 50 security checks (plain-English catalog): https://loophole-sf-c596.vercel.app/tools.html
+- Other free tools by the same author: https://loophole-sf-c596.vercel.app/other-tools.html
+- About: https://loophole-sf-c596.vercel.app/about.html
+- GitHub repository (source, releases, issues): https://github.com/rootsiemen/loophole
+
+## Author
+
+Created and maintained by Muhamad Raza Haider — https://github.com/rootsiemen

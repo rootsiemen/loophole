@@ -40,15 +40,23 @@ def rule_ids(findings):
 EXPECTED = {
     "js_vuln.js": {"SEC001", "SQLI001", "AUTH001", "XSS001", "XSS003",
                    "CMD001", "EVAL001", "JWT001", "CORS001", "TLS001",
-                   "ERR001", "RAND001"},
-    "ts_vuln.ts": {"SQLI001", "SSRF001", "PATH001", "PATH002"},
+                   "ERR001", "RAND001",
+                   "PROTO001", "NOSQL001", "REDIR001", "JWT002", "UPL001",
+                   "REDOS001", "LOG001", "ZIP001", "TLS002", "CRY005",
+                   "LDAP001", "CSRF001", "HDR001"},
+    "ts_vuln.ts": {"SQLI001", "SSRF001", "PATH001", "PATH002", "HDR001"},
     "py_vuln.py": {"SEC002", "SQLI002", "CMD002", "SSRF001", "TLS001",
                    "PATH001", "EVAL001", "RAND002", "CRY001", "AUTH001",
-                   "DBG001"},
+                   "DBG001",
+                   "DESER001", "NOSQL001", "XXE001", "REDIR001", "ZIP001",
+                   "CSRF001", "UPL001", "REDOS001", "JWT002", "TLS002",
+                   "CRY005", "LOG001", "LDAP001", "HDR001"},
     "go_vuln.go": {"SQLI003", "CMD003", "CRY003", "CRY004", "RAND003",
-                   "TLS001"},
+                   "TLS001", "TLS002", "REDOS001", "LOG001"},
     "php_vuln.php": {"SEC001", "SQLI004", "XSS004", "CMD004", "EVAL001",
-                     "CRY001", "SSRF001", "TLS001", "PATH001"},
+                     "CRY001", "SSRF001", "TLS001", "PATH001",
+                     "DESER001", "XXE001", "REDIR001", "ZIP001", "UPL001",
+                     "REDOS001", "TLS002", "CRY005", "LOG001", "LDAP001"},
     "mixed_vuln.py": {"SEC003", "SEC004", "SEC005", "PATH002", "CORS001",
                       "DBG001"},
 }
@@ -121,7 +129,7 @@ class TestFixtures(unittest.TestCase):
             [sys.executable, SCANNER, "scan", "--rules", "."],
             capture_output=True, text=True, cwd=ROOT)
         self.assertEqual(proc.returncode, 0)
-        self.assertIn("35 rules total", proc.stdout)
+        self.assertIn("50 rules total", proc.stdout)
 
     def test_no_rule_crashes(self):
         """Every rule function must run without raising (regression net for

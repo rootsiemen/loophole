@@ -1350,7 +1350,775 @@ def rule_ERR001(ctx):
 
 
 # ---------------------------------------------------------------------------
-# Rule registry — 35 rules
+# PROTO — prototype pollution (JS/TS)
+# ---------------------------------------------------------------------------
+
+def rule_PROTO001(ctx):
+    """Prototype pollution via deep-merge / assign of user-controlled keys."""
+    out = []
+    for i, line in enumerate(ctx.lines, 1):
+        hit = False
+        # lodash-style deep merges are the classic pollution vector
+        if re.search(r"(?:_|\blodash)\.(?:merge|mergeWith|defaultsDeep|set)"
+                     r"\s*\(", line):
+            hit = True
+        # Object.assign into a fresh object with request data flowing in
+        args = call_args(line, r"Object\.assign")
+        if args is not None and ctx.flow(args) != (None, None):
+            hit = True
+        # direct __proto__ writes
+        if re.search(r"\.__proto__\b|\[\s*['\"]__proto__['\"]\s*\]", line):
+            hit = True
+        if hit:
+            out.append(ctx.hit(
+                "PROTO001", "high", "Possible prototype pollution (JS/TS)",
+                i,
+                "Deep-merging attacker-controlled JSON (keys like "
+                "__proto__) mutates Object.prototype, corrupting every "
+                "object in the process — auth checks and defaults can be "
+                "silently rewritten.",
+                "Never deep-merge untrusted input. Reject __proto__ / "
+                "constructor / prototype keys, use Object.create(null) "
+                "maps, or merge with a schema-validated allowlist."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# DESER — unsafe deserialization
+# ---------------------------------------------------------------------------
+
+def rule_DESER001(ctx):
+    """Untrusted data fed to native object deserializers."""
+    out = []
+    if ctx.lang == "py":
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\b(pickle|marshal|dill)\.loads?\s*\(", line) \
+                    or re.search(r"\bcpickle\.loads?\s*\(", line):
+                out.append(ctx.hit(
+                    "DESER001", "high",
+                    "Unsafe deserialization (pickle/marshal)", i,
+                    "Unpickling attacker-controlled bytes is arbitrary "
+                    "code execution — the pickle opcodes run during load, "
+                    "before any validation can happen.",
+                    "Never unpickle untrusted data. Use JSON (or sign the "
+                    "payload with HMAC and verify before loading)."))
+            elif re.search(r"\byaml\.load\s*\(", line) \
+                    and not re.search(r"(SafeLoader|CSafeLoader)", line):
+                out.append(ctx.hit(
+                    "DESER001", "high", "yaml.load without SafeLoader", i,
+                    "yaml.load with the default Loader constructs arbitrary "
+                    "Python objects from YAML tags — code execution from a "
+                    "crafted document.",
+                    "Use yaml.safe_load(), or pass Loader=yaml.SafeLoader "
+                    "explicitly."))
+    elif ctx.lang == "php":
+        for i, line in enumerate(ctx.lines, 1):
+            args = call_args(line, r"\bunserialize")
+            if args is None or "allowed_classes" in line:
+                continue
+            if is_string_literal(args):
+                continue  # unserializing a constant string: inert
+            out.append(ctx.hit(
+                "DESER001", "high", "unserialize() on dynamic data", i,
+                "PHP unserialize() on attacker-influenced strings enables "
+                "object injection — magic methods (__wakeup/__unserialize) "
+                "in any loaded class become attacker-controlled.",
+                "Use json_decode() for untrusted data, or pass "
+                "['allowed_classes' => false] to unserialize()."))
+    elif ctx.lang == "js":
+        pats = [r"\bserialize\.unserialize\s*\(",
+                r"require\s*\(\s*['\"]node-serialize['\"]\s*\)"]
+        out = regex_rule(
+            ctx, "DESER001", "high",
+            "Unsafe deserialization (node-serialize)", {"js": pats},
+            "node-serialize's unserialize() evaluates embedded functions "
+            "in the payload — remote code execution from a crafted string.",
+            "Use JSON.parse() for untrusted data; never a deserializer "
+            "that revives functions/objects.")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# NOSQL — NoSQL injection
+# ---------------------------------------------------------------------------
+
+_NOSQL_SINKS = {
+    "js": r"\.(find|findOne|findById|updateOne|updateMany|deleteOne|"
+          r"deleteMany|replaceOne|aggregate|countDocuments)\s*\(",
+    "py": r"\.(find|find_one|update_one|update_many|delete_one|"
+          r"delete_many|aggregate|count_documents)\s*\(",
+}
+
+
+def rule_NOSQL001(ctx):
+    """User input flowing into a MongoDB-style query."""
+    out = []
+    sink = _NOSQL_SINKS.get(ctx.lang)
+    if not sink:
+        return out
+    for i, line in enumerate(ctx.lines, 1):
+        m = re.search(sink, line)
+        if not m:
+            continue
+        args = line[m.start():]
+        taint_var, taint_src = ctx.flow(args)
+        if taint_var or taint_src or "$where" in args:
+            out.append(ctx.hit(
+                "NOSQL001", "high", "NoSQL injection (query from input)",
+                i,
+                "Passing request data straight into a MongoDB-style query "
+                "lets attackers inject operators ($ne, $gt, $where) — the "
+                "classic login bypass is {user: x, pass: {$ne: null}}.",
+                "Build queries from validated scalar values only; reject "
+                "objects/arrays from request bodies (e.g. with a schema "
+                "validator) and cast ids explicitly (ObjectId(...)).",
+                taint=_taint_note(taint_var, taint_src, "find")))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# XXE — XML external entity
+# ---------------------------------------------------------------------------
+
+def rule_XXE001(ctx):
+    """XML parsing with external entities enabled / not hardened."""
+    out = []
+    text = "\n".join(ctx.lines)
+    if ctx.lang == "py":
+        if "defusedxml" in text:
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"lxml\.etree\.(parse|fromstring|XML|XMLParser)"
+                         r"\s*\(", line) \
+                    and "resolve_entities=False" not in line:
+                out.append(ctx.hit(
+                    "XXE001", "high", "lxml parsing (entities resolvable)",
+                    i,
+                    "lxml resolves external entities by default in several "
+                    "entry points — a crafted XML file can read local files "
+                    "(file:///etc/passwd) or hit internal services (SSRF).",
+                    "Parse with resolve_entities=False, no_network=True — "
+                    "or switch to defusedxml."))
+            elif re.search(r"xml\.dom\.minidom\.(parse|parseString)\s*\(",
+                           line) \
+                    or re.search(r"xml\.sax\.(parse|parseString|make_parser)"
+                                 r"\b", line):
+                out.append(ctx.hit(
+                    "XXE001", "high", "XML parser without XXE hardening", i,
+                    "The stdlib SAX/minidom parsers can expand external "
+                    "entities in untrusted XML — local file disclosure and "
+                    "SSRF from an uploaded document.",
+                    "Use defusedxml, or disable DTDs/external entities on "
+                    "the parser before parsing untrusted XML."))
+    elif ctx.lang == "php":
+        hardened = "libxml_disable_entity_loader" in text \
+            or "LIBXML_NONET" in text
+        if hardened:
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"simplexml_load_(string|file)\s*\(", line) \
+                    or re.search(r"->\s*loadXML?\s*\(", line):
+                out.append(ctx.hit(
+                    "XXE001", "high", "XML load without XXE hardening", i,
+                    "Loading untrusted XML without disabling external "
+                    "entities lets a crafted document read local files or "
+                    "call internal URLs (XXE / SSRF).",
+                    "Pass LIBXML_NONET (and LIBXML_NOENT off) to the load "
+                    "call, or disable the entity loader on PHP < 8."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# REDIR — open redirect
+# ---------------------------------------------------------------------------
+
+_REDIR_SINKS = {
+    "js": [r"\.redirect\s*\("],
+    "py": [r"(?<![\w.])redirect\s*\(", r"HttpResponseRedirect\s*\(",
+           r"RedirectResponse\s*\("],
+    "php": [r"\bheader\s*\("],
+    "go": [r"http\.Redirect\s*\("],
+}
+
+
+def rule_REDIR001(ctx):
+    """Redirect target taken from user input."""
+    out = []
+    for i, line in enumerate(ctx.lines, 1):
+        for pat in _REDIR_SINKS[ctx.lang]:
+            m = re.search(pat, line)
+            if not m:
+                continue
+            args = line[m.start():]
+            if ctx.lang == "php" and "Location:" not in args:
+                continue
+            if is_string_literal(_first_arg(
+                    args[args.find("(") + 1:]) if "(" in args else args):
+                continue  # fixed target: safe
+            taint_var, taint_src = ctx.flow(args)
+            dynamic = (taint_var or taint_src
+                       or re.search(r"\+\s*['\"\$]|['\"]\s*\+\s*\$|\$\{"
+                                    r"|%\s*\(|f['\"]|\.\s*\$", args))
+            if dynamic:
+                out.append(ctx.hit(
+                    "REDIR001", "medium",
+                    "Open redirect (target from user input)", i,
+                    "Redirecting to a user-supplied URL turns your trusted "
+                    "domain into a phishing springboard and can bypass "
+                    "allowlist checks on OAuth/SSO flows.",
+                    "Redirect only to paths from an allowlist, or require "
+                    "the target to be a local path (starts with a single "
+                    "'/' and contains no host).",
+                    taint=_taint_note(taint_var, taint_src, "redirect")))
+            break
+    return out
+
+
+# ---------------------------------------------------------------------------
+# ZIP — Zip Slip (archive extraction path traversal)
+# ---------------------------------------------------------------------------
+
+_ZIP_GUARD = re.compile(
+    r"(commonpath|abspath|is_within|resolve\s*\(\s*\)|startsWith\s*\(|"
+    r"beginPath|canonical)")
+
+
+def rule_ZIP001(ctx):
+    """Archive extraction without validating member paths."""
+    text = "\n".join(ctx.lines)
+    guarded = _ZIP_GUARD.search(text) is not None
+    out = []
+    if ctx.lang == "py":
+        if guarded:
+            return out
+        archive_ctx = "zipfile" in text or "tarfile" in text
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\.extractall\s*\(", line) \
+                    or (archive_ctx and re.search(r"\.extract\s*\(", line)):
+                out.append(ctx.hit(
+                    "ZIP001", "high",
+                    "Archive extraction without path validation (Zip Slip)",
+                    i,
+                    "extractall()/extract() trust member names inside the "
+                    "archive — a crafted zip/tar entry named '../../evil' "
+                    "writes outside the destination folder (Zip Slip).",
+                    "Validate each member: resolve its absolute target "
+                    "path and require it to stay inside the destination "
+                    "directory (os.path.commonpath check) before writing."))
+    elif ctx.lang == "php":
+        if guarded:
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"->\s*extractTo\s*\(", line):
+                out.append(ctx.hit(
+                    "ZIP001", "high",
+                    "ZipArchive::extractTo without path validation", i,
+                    "extractTo() writes archive member names verbatim — "
+                    "entries with '../' escape the target directory and "
+                    "can overwrite application files.",
+                    "Iterate entries, resolve each target path, and "
+                    "reject any that escape the destination directory."))
+    elif ctx.lang == "js":
+        if guarded:
+            return out
+        pats = [r"\.extractAllTo\s*\(", r"extract-zip",
+                r"createReadStream\s*\([^)]*\)\s*\.pipe\s*\(\s*unzip"]
+        out = regex_rule(
+            ctx, "ZIP001", "high",
+            "Archive extraction without path validation (Zip Slip)",
+            {"js": pats},
+            "Bulk-extract helpers write member names verbatim — a "
+            "crafted archive entry ('../../evil.js') escapes the target "
+            "folder and overwrites files.",
+            "Extract entry-by-entry, resolve each output path, and "
+            "reject anything outside the destination directory.")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# CSRF — cross-site request forgery protection missing (app-level)
+# ---------------------------------------------------------------------------
+
+_CSRF_MARKERS = re.compile(
+    r"(?i)(csurf|csrf|xsrf|flask_wtf|validate_on_submit|FlaskForm|"
+    r"csrf_exempt_check|authenticity_token)")
+
+
+def rule_CSRF001(ctx):
+    """State-changing routes with no CSRF defence anywhere in the file."""
+    text = "\n".join(ctx.lines)
+    if _CSRF_MARKERS.search(text):
+        return []
+    out = []
+    if ctx.lang == "js":
+        if not re.search(r"express\s*\(|require\s*\(\s*['\"]express", text):
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\.(post|put|patch|delete)\s*\(", line):
+                out.append(ctx.hit(
+                    "CSRF001", "medium",
+                    "State-changing routes, no CSRF protection (Express)",
+                    i,
+                    "This Express app mutates state on POST/PUT/DELETE "
+                    "but no CSRF token middleware (csurf, csrf-csrf, …) "
+                    "appears anywhere in the file — a malicious page can "
+                    "ride a logged-in victim's session. (Heuristic.)",
+                    "Add CSRF token middleware for cookie-authenticated "
+                    "routes, or use SameSite=Lax/Strict cookies plus "
+                    "origin checks."))
+                break
+    elif ctx.lang == "py":
+        if "django" in text and "MIDDLEWARE" in text:
+            for i, line in enumerate(ctx.lines, 1):
+                if "MIDDLEWARE" in line \
+                        and "CsrfViewMiddleware" not in text:
+                    out.append(ctx.hit(
+                        "CSRF001", "medium",
+                        "Django MIDDLEWARE without CsrfViewMiddleware", i,
+                        "Django's CSRF middleware is absent from "
+                        "MIDDLEWARE — POST forms lose Django's built-in "
+                        "forgery protection.",
+                        "Restore 'django.middleware.csrf."
+                        "CsrfViewMiddleware' to MIDDLEWARE."))
+                    break
+            return out
+        if not re.search(r"Flask\s*\(", text):
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"methods\s*=\s*\[[^\]]*(POST|PUT|PATCH|DELETE)",
+                         line) or re.search(r"\.(post|put|delete)\s*\(",
+                                             line):
+                out.append(ctx.hit(
+                    "CSRF001", "medium",
+                    "State-changing routes, no CSRF protection (Flask)",
+                    i,
+                    "This Flask app accepts state-changing requests but "
+                    "no CSRF protection (Flask-WTF CSRFProtect, csrf "
+                    "tokens, …) appears anywhere in the file. "
+                    "(Heuristic.)",
+                    "Enable Flask-WTF's CSRFProtect(app) or validate a "
+                    "per-session CSRF token on every mutating route."))
+                break
+    return out
+
+
+# ---------------------------------------------------------------------------
+# UPL — file upload without type validation
+# ---------------------------------------------------------------------------
+
+_UPL_MARKERS = re.compile(
+    r"(?i)(allowed_file|ALLOWED_EXTENSIONS|fileFilter|mimetype|"
+    r"content_type|magic|finfo|getimagesize|pathinfo\s*\([^)]*PATHINFO_EXTENSION"
+    r"|extension\s+in|allowedExtensions)")
+
+
+def rule_UPL001(ctx):
+    """Uploads accepted/saved with no file-type validation in the file."""
+    text = "\n".join(ctx.lines)
+    if _UPL_MARKERS.search(text):
+        return []
+    out = []
+    if ctx.lang == "js":
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\bmulter\s*\(", line) \
+                    or re.search(r"\.single\s*\(|\.array\s*\(", line):
+                out.append(ctx.hit(
+                    "UPL001", "high",
+                    "File upload (multer) without type validation", i,
+                    "multer is configured with no fileFilter and no type "
+                    "allowlist anywhere in the file — attackers can upload "
+                    "executable scripts or oversized files.",
+                    "Add a fileFilter that allowlists extensions/MIME "
+                    "types, set limits.fileSize, and store uploads "
+                    "outside the web root with generated names."))
+                break
+    elif ctx.lang == "py":
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"request\.files\s*(\[|\.get\s*\()", line):
+                out.append(ctx.hit(
+                    "UPL001", "high",
+                    "File upload saved without type validation", i,
+                    "request.files is consumed with no extension/MIME "
+                    "allowlist anywhere in the file — a visitor can "
+                    "upload a script or malicious payload. "
+                    "(secure_filename() alone only sanitizes the name.)",
+                    "Validate against an extension allowlist "
+                    "(allowed_file()), verify content type, cap size, "
+                    "and save with a generated name outside the web root."))
+                break
+    elif ctx.lang == "php":
+        if "$_FILES" not in text:
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\bmove_uploaded_file\s*\(", line):
+                out.append(ctx.hit(
+                    "UPL001", "high",
+                    "move_uploaded_file without type validation", i,
+                    "$_FILES uploads are stored with no extension/MIME "
+                    "validation anywhere in the file — the classic route "
+                    "to uploading a web shell.",
+                    "Allowlist extensions, verify with finfo/"
+                    "mime_content_type, rename uploads randomly, and "
+                    "store them outside the web root."))
+                break
+    return out
+
+
+# ---------------------------------------------------------------------------
+# REDOS — catastrophic-backtracking regex
+# ---------------------------------------------------------------------------
+
+_REDOS_CONTEXT = {
+    "js": re.compile(r"new\s+RegExp\s*\(|=\s*/[^/\n]+/[gimsuy]*|"
+                     r"\.(test|match|replace|split)\s*\("),
+    "py": re.compile(r"\bre\.(compile|match|search|fullmatch|findall|sub)"
+                     r"\s*\("),
+    "go": re.compile(r"regexp\.(Compile|MustCompile)\s*\("),
+    "php": re.compile(r"preg_(match|replace|split|grep)\s*\("),
+}
+
+
+def _string_literals(line):
+    """Contents of quoted literals on a line (quotes/backticks)."""
+    lits = []
+    i = 0
+    in_str = None
+    start = 0
+    while i < len(line):
+        ch = line[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_str:
+                lits.append(line[start:i])
+                in_str = None
+        elif ch in "\"'`":
+            in_str = ch
+            start = i + 1
+        i += 1
+    return lits
+
+
+def _nested_quantifier(rx):
+    """True when a (…) group holding + or * is itself repeated — the
+    classic catastrophic-backtracking shape, e.g. (a+)+ or (\\w*)*."""
+    i = 0
+    while i < len(rx):
+        if rx[i] == "(" and (i == 0 or rx[i - 1] != "\\"):
+            depth = 1
+            j = i + 1
+            while j < len(rx) and depth:
+                if rx[j] == "\\":
+                    j += 2
+                    continue
+                if rx[j] == "(":
+                    depth += 1
+                elif rx[j] == ")":
+                    depth -= 1
+                j += 1
+            if depth:
+                return False
+            body = rx[i + 1:j - 1]
+            after = rx[j] if j < len(rx) else ""
+            if after and after in "+*{":
+                inner = re.sub(r"\[[^\]]*\]", "", body)
+                inner = re.sub(r"\\.", "", inner)
+                if "+" in inner or "*" in inner:
+                    return True
+            i = j
+        else:
+            i += 1
+    return False
+
+
+def rule_REDOS001(ctx):
+    """Regex with nested quantifiers (ReDoS)."""
+    out = []
+    pat = _REDOS_CONTEXT[ctx.lang]
+    for i, line in enumerate(ctx.lines, 1):
+        if not pat.search(line):
+            continue
+        candidates = _string_literals(line)
+        m = re.search(r"=+\s*/(.+?)/[gimsuy]*", line)
+        if m:
+            candidates.append(m.group(1))
+        if any(_nested_quantifier(c) for c in candidates):
+            out.append(ctx.hit(
+                "REDOS001", "medium",
+                "ReDoS-prone regex (nested quantifiers)", i,
+                "A repeated group that itself repeats — (a+)+, (\\w*)* — "
+                "backtracks exponentially on near-miss input. One crafted "
+                "string can pin a CPU and hang the process.",
+                "Rewrite without nested quantifiers (possessive/atomic "
+                "groups, character classes, or a bounded length + simple "
+                "pattern), and cap input length."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# JWT002 — JWT 'none' algorithm / weak secret accepted
+# ---------------------------------------------------------------------------
+
+def rule_JWT002(ctx):
+    """JWT verification weakened: alg=none allowed or a trivial secret."""
+    out = []
+    none_pat = re.compile(
+        r"(?i)algorithms?\s*[:=]\s*\[[^\]]*['\"]none['\"]")
+    weak_pat = re.compile(
+        r"(?i)\bjwt\.(verify|decode|sign|encode)\b[^\n]*"
+        r"['\"](secret|changeme|password|123456|key)['\"]")
+    verify_off = re.compile(
+        r"['\"]verify_signature['\"]\s*:\s*False")
+    for i, line in enumerate(ctx.lines, 1):
+        if none_pat.search(line) or weak_pat.search(line) \
+                or verify_off.search(line):
+            out.append(ctx.hit(
+                "JWT002", "high",
+                "JWT 'none' algorithm or weak secret accepted", i,
+                "Allowing the 'none' algorithm, disabling signature "
+                "verification, or signing with a guessable secret "
+                "('secret', 'changeme') lets anyone forge tokens for any "
+                "user — full authentication bypass.",
+                "Pin algorithms to ['HS256'] (or your RS256), remove "
+                "'none', keep verification on, and use a long random "
+                "secret from the environment / a KMS."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# TLS002 — weak / outdated TLS protocol versions
+# ---------------------------------------------------------------------------
+
+def rule_TLS002(ctx):
+    """Outdated TLS protocol versions pinned or negotiated."""
+    pats = {
+        "js": [r"minVersion\s*:\s*['\"](TLSv1|TLSv1\.1|SSLv3)['\"]",
+               r"secureProtocol\s*:\s*['\"](SSLv3|TLSv1)(_method)?['\"]"],
+        "py": [r"PROTOCOL_(SSLv2|SSLv3|TLSv1|TLSv1_1)\b",
+               r"ssl\.wrap_socket\s*\(",
+               r"minimum_version\s*=\s*ssl\.TLSVersion\.TLSv1\b"],
+        "go": [r"MinVersion\s*:\s*tls\.VersionTLS1[01]\b",
+               r"MaxVersion\s*:\s*tls\.VersionTLS1[01]\b"],
+        "php": [r"(?i)\bsslv3\b", r"(?i)\btlsv1\.0\b",
+                r"STREAM_CRYPTO_METHOD_(SSLv|TLSv1_0)"],
+    }
+    return regex_rule(
+        ctx, "TLS002", "medium", "Weak/outdated TLS version allowed", pats,
+        "TLS 1.0/1.1 and SSLv3 are broken (BEAST, POODLE) and rejected by "
+        "modern browsers and compliance regimes — pinning them downgrades "
+        "every connection.",
+        "Require TLS 1.2+ (prefer 1.3): ssl.PROTOCOL_TLS_CLIENT / "
+        "MinVersion: tls.VersionTLS12 / minVersion: 'TLSv1.2'.")
+
+
+# ---------------------------------------------------------------------------
+# CRY005 — ECB mode / zero or static IV beyond CRY004's literal patterns
+# ---------------------------------------------------------------------------
+
+def rule_CRY005(ctx):
+    """ECB mode, or a zero/derived-static IV feeding a cipher."""
+    pats = {
+        "js": [r"(?i)createCipheriv\s*\(\s*['\"][^'\"]*-ecb['\"]",
+               r"createCipheriv\s*\([^;)]*Buffer\.alloc\s*\(",
+               r"(?i)\biv\s*[:=]\s*Buffer\.alloc\s*\("],
+        "py": [r"MODE_ECB\b",  # loophole: skip=CRY005
+               r"(?i)\biv\s*=\s*bytes\s*\(\s*\d+\s*\)",
+               r"(?i)\biv\s*=\s*b['\"]0+['\"]"],
+        "php": [r"(?i)['\"][a-z0-9-]*-ecb['\"]",
+                r"(?i)openssl_encrypt\s*\([^)]*['\"][^'\"]*ecb['\"]",
+                r"(?i)\$iv\s*=\s*str_repeat\s*\("],
+    }
+    return regex_rule(
+        ctx, "CRY005", "medium", "ECB mode or zero/static IV", pats,
+        "ECB encrypts identical plaintext blocks identically (the famous "
+        "ECB penguin), and a zero or fixed IV destroys CBC/GCM "
+        "confidentiality the same way a hardcoded one does.",
+        "Use AES-256-GCM with a fresh random IV per message "
+        "(crypto.randomBytes / os.urandom), stored beside the "
+        "ciphertext.")
+
+
+# ---------------------------------------------------------------------------
+# LOG — sensitive data written to logs
+# ---------------------------------------------------------------------------
+
+_LOG_SINKS = {
+    "js": re.compile(r"console\.(log|info|debug|warn|error)\s*\(|"
+                     r"\blogger\.\w+\s*\("),
+    "py": re.compile(r"\bprint\s*\(|\blogging\.\w+\s*\(|"
+                     r"\blogger\.\w+\s*\("),
+    "go": re.compile(r"\blog\.(Print|Printf|Println|Fatal|Fatalf)\s*\(|"
+                     r"\bfmt\.(Print|Printf|Println)\s*\("),
+    "php": re.compile(r"\berror_log\s*\(|\bvar_dump\s*\(|"
+                      r"\bprint_r\s*\("),
+}
+_LOG_SENSITIVE = re.compile(
+    r"(?i)(?<![\w])(password|passwd|pwd|token|secret|api[_-]?key|"
+    r"apikey|authorization|credential|private[_-]?key)(?![\w])")  # loophole: skip=SEC005
+
+
+def _strip_strings(line):
+    """Line with quoted-literal contents removed (code left behind)."""
+    out = []
+    i = 0
+    in_str = None
+    while i < len(line):
+        ch = line[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_str:
+                in_str = None
+                out.append(ch)
+        elif ch in "\"'`":
+            in_str = ch
+            out.append(ch)
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _interpolated(line):
+    """Names interpolated into template/f-strings on the line."""
+    names = re.findall(r"\$\{\s*([A-Za-z_$][\w$.]*)", line)
+    names += re.findall(r"\{\s*([A-Za-z_][\w.]*)\s*\}", line)
+    return " ".join(names)
+
+
+def rule_LOG001(ctx):
+    """Passwords / tokens / secrets passed to logging calls."""
+    out = []
+    sink = _LOG_SINKS[ctx.lang]
+    for i, line in enumerate(ctx.lines, 1):
+        if not sink.search(line):
+            continue
+        code = _strip_strings(line)
+        if _LOG_SENSITIVE.search(code) \
+                or _LOG_SENSITIVE.search(_interpolated(line)):
+            out.append(ctx.hit(
+                "LOG001", "medium", "Sensitive data written to logs", i,
+                "Logs are copied everywhere — aggregators, backups, "
+                "support tickets — and rarely encrypted. Passwords and "
+                "tokens in logs become standing credentials for anyone "
+                "with log access.",
+                "Never log secrets or full tokens/passwords. Log "
+                "redacted values (user id, token fingerprint) instead."))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# LDAP — LDAP injection
+# ---------------------------------------------------------------------------
+
+_LDAP_SINKS = {
+    "js": r"\.search\s*\(",
+    "py": r"\.(search_s|search_ext_s|search|search_ext)\s*\(",
+    "php": r"\bldap_search\s*\(|\bldap_list\s*\(|\bldap_read\s*\(",
+}
+
+# A bare ".search(" only counts as an LDAP sink when the file actually
+# uses an LDAP library (otherwise it matches re.search() and friends).
+_LDAP_GATE = re.compile(
+    r"(^\s*import\s+ldap|^\s*from\s+ldap|ldap\.initialize|import\s+ldap3|"
+    r"require\s*\(\s*['\"][^'\"]*ldap|from\s+['\"][^'\"]*ldap)",
+    re.MULTILINE)
+
+
+def rule_LDAP001(ctx):
+    """LDAP filter/DN built from unescaped user input."""
+    out = []
+    sink = _LDAP_SINKS.get(ctx.lang)
+    if not sink:
+        return out
+    gated = _LDAP_GATE.search("\n".join(ctx.lines)) is not None
+    for i, line in enumerate(ctx.lines, 1):
+        m = re.search(sink, line)
+        if not m:
+            continue
+        if ctx.lang in ("js", "py") and not gated \
+                and not re.search(r"search_(s|ext)\s*\(", line):
+            continue  # generic .search( without any LDAP library in play
+        region = line[m.start():]
+        if ctx.lang == "js":
+            region = line
+            if not re.search(r"filter\s*[:=]", line):
+                continue
+        args = call_args(line, sink) or region
+        if is_string_literal(_first_arg(args)):
+            continue  # static filter: safe
+        taint_var, taint_src = ctx.flow(args)
+        dynamic = (taint_var or taint_src
+                   or re.search(r"\$\{|['\"]\s*\+|\+\s*['\"]|%\s*\(|"
+                                r"f['\"]|\.\s*\$", args))
+        if dynamic:
+            out.append(ctx.hit(
+                "LDAP001", "high", "LDAP injection via unescaped input",
+                i,
+                "Building LDAP filters from raw input lets attackers "
+                "inject wildcards and boolean clauses ((|(uid=*))) to "
+                "enumerate the directory or bypass authentication.",
+                "Escape filter values (ldap.filter.escape_filter_chars "
+                "/ RFC 4515 escaping) and DN components; never concat "
+                "raw input into a filter.",
+                taint=_taint_note(taint_var, taint_src, "ldap_search")))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# HDR — missing security headers (app-level heuristic)
+# ---------------------------------------------------------------------------
+
+_HDR_MARKERS = re.compile(
+    r"(?i)(helmet|Content-Security-Policy|X-Frame-Options|"
+    r"X-Content-Type-Options|Strict-Transport-Security|talisman)")
+
+
+def rule_HDR001(ctx):
+    """Web app with no security-header protection anywhere in the file."""
+    text = "\n".join(ctx.lines)
+    if _HDR_MARKERS.search(text):
+        return []
+    out = []
+    if ctx.lang == "js":
+        if not re.search(r"express\s*\(|require\s*\(\s*['\"]express", text):
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"\bexpress\s*\(\s*\)", line):
+                out.append(ctx.hit(
+                    "HDR001", "medium",
+                    "No security headers configured (Express)", i,
+                    "No helmet and no manual Content-Security-Policy / "
+                    "X-Frame-Options / HSTS headers anywhere in the file "
+                    "— the app misses the baseline browser protections "
+                    "against clickjacking and MIME sniffing. (Heuristic.)",
+                    "Add helmet (app.use(helmet())) or set CSP, "
+                    "X-Frame-Options, X-Content-Type-Options and HSTS "
+                    "headers in middleware."))
+                break
+    elif ctx.lang == "py":
+        if not re.search(r"Flask\s*\(", text):
+            return out
+        for i, line in enumerate(ctx.lines, 1):
+            if re.search(r"Flask\s*\(", line):
+                out.append(ctx.hit(
+                    "HDR001", "medium",
+                    "No security headers configured (Flask)", i,
+                    "No Content-Security-Policy / X-Frame-Options (or "
+                    "flask-talisman) anywhere in the file — the app "
+                    "misses the baseline browser protections against "
+                    "clickjacking and MIME sniffing. (Heuristic.)",
+                    "Add an @app.after_request hook setting CSP, "
+                    "X-Frame-Options, X-Content-Type-Options and HSTS — "
+                    "or use flask-talisman."))
+                break
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Rule registry — 50 rules
 # ---------------------------------------------------------------------------
 
 RULES = [
@@ -1390,6 +2158,21 @@ RULES = [
     ("TLS001", ("js", "py", "go", "php"), rule_TLS001),
     ("DBG001", ("js", "py", "php"), rule_DBG001),
     ("ERR001", ("js", "py", "go", "php"), rule_ERR001),
+    ("PROTO001", ("js",), rule_PROTO001),
+    ("DESER001", ("js", "py", "php"), rule_DESER001),
+    ("NOSQL001", ("js", "py"), rule_NOSQL001),
+    ("XXE001", ("py", "php"), rule_XXE001),
+    ("REDIR001", ("js", "py", "go", "php"), rule_REDIR001),
+    ("ZIP001", ("js", "py", "php"), rule_ZIP001),
+    ("CSRF001", ("js", "py"), rule_CSRF001),
+    ("UPL001", ("js", "py", "php"), rule_UPL001),
+    ("REDOS001", ("js", "py", "go", "php"), rule_REDOS001),
+    ("JWT002", ("js", "py", "php"), rule_JWT002),
+    ("TLS002", ("js", "py", "go", "php"), rule_TLS002),
+    ("CRY005", ("js", "py", "php"), rule_CRY005),
+    ("LOG001", ("js", "py", "go", "php"), rule_LOG001),
+    ("LDAP001", ("js", "py", "php"), rule_LDAP001),
+    ("HDR001", ("js", "py"), rule_HDR001),
 ]
 
 

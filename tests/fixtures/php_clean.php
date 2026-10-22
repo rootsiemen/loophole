@@ -25,3 +25,14 @@ $data = file_get_contents('/data/static.json');
 $ch = curl_init('https://api.example.com/hook');
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 curl_exec($ch);
+
+// --- 2026 expansion: safe counterparts (must stay silent) ---
+$obj = unserialize($cache, ['allowed_classes' => false]); // DESER001-safe
+
+$ext = strtolower(pathinfo($_FILES['doc']['name'], PATHINFO_EXTENSION));
+if (in_array($ext, ['pdf', 'png'], true)) { // UPL001-safe: allowlist
+    move_uploaded_file($_FILES['doc']['tmp_name'],
+        '/uploads/' . bin2hex(random_bytes(8)) . '.' . $ext);
+}
+
+header('Location: /dashboard'); // REDIR001-safe: fixed target

@@ -3,9 +3,11 @@ const express = require('express');
 const { execFile } = require('child_process');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const helmet = require('helmet');
 
 const API_KEY = process.env.API_KEY;
 const app = express();
+app.use(helmet());
 
 function requireAuth(req, res, next) {
   const token = jwt.verify(req.headers.authorization, process.env.JWT_SECRET, {
@@ -56,3 +58,19 @@ app.get('/boom', (req, res) => {
 });
 
 const data = JSON.parse(req.body.payload);
+
+// --- 2026 expansion: safe counterparts (must stay silent) ---
+const defaults = { port: 8080, host: 'localhost' };
+const mergedCfg = Object.assign({}, defaults, { port: 9090 }); // PROTO001-safe
+
+app.get('/old-home', (req, res) => {
+  res.redirect('/home'); // REDIR001-safe: fixed target
+});
+
+function findAlice() {
+  return User.findOne({ user: 'alice', active: true }); // NOSQL001-safe
+}
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/; // REDOS001-safe
+
+console.log('server started'); // LOG001-safe: no sensitive values

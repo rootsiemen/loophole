@@ -25,3 +25,29 @@ curl_exec($ch);
 
 $data = file_get_contents($_GET['page']); // PATH001 (tainted)
 include $_GET['tpl']; // PATH001 (tainted, LFI)
+
+// --- 2026 expansion: new-rule coverage ---
+$obj = unserialize($_GET['data']); // DESER001
+
+$zip = new ZipArchive;
+$zip->open('up.zip');
+$zip->extractTo('/var/www/html'); // ZIP001
+
+move_uploaded_file($_FILES['doc']['tmp_name'],
+    '/uploads/' . $_FILES['doc']['name']); // UPL001 (no validation)
+
+header('Location: ' . $_GET['next']); // REDIR001
+
+$xml = simplexml_load_string($_POST['xml']); // XXE001
+
+curl_setopt($ch, CURLOPT_SSLVERSION, 'TLSv1.0'); // TLS002
+
+$password = $_POST['password'];
+error_log("login attempt: " . $password); // LOG001
+
+$res = ldap_search($ldap, 'dc=example,dc=com', '(uid=' . $_GET['u'] . ')'); // LDAP001
+
+$cipher = 'aes-256-ecb'; // CRY005
+$enc = openssl_encrypt($data, 'aes-256-ecb', $key); // CRY005
+
+$ok = preg_match('/(a+)+$/', $input); // REDOS001

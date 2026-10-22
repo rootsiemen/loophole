@@ -6,9 +6,11 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"os/exec"
+	"regexp"
 )
 
 var db *sql.DB
@@ -42,4 +44,16 @@ func makeToken() string {
 func insecureClient() {
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}} // TLS001
 	_ = tr
+}
+
+// --- 2026 expansion: new-rule coverage ---
+func oldTLSClient() {
+	tr := &http.Transport{TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS10}} // TLS002
+	_ = tr
+}
+
+var emailRe = regexp.MustCompile(`^(a+)+$`) // REDOS001
+
+func logToken(token string) {
+	log.Printf("user token: %s", token) // LOG001
 }

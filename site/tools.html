@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All 50 Security Checks — Loophole</title>
+<meta name="description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
+<link rel="canonical" href="https://loophole-sf-c596.vercel.app/tools.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Loophole">
+<meta property="og:title" content="All 50 Security Checks — Loophole">
+<meta property="og:description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
+<meta property="og:url" content="https://loophole-sf-c596.vercel.app/tools.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="All 50 Security Checks — Loophole">
+<meta name="twitter:description" content="All 50 Loophole security checks in plain English — secrets, injection, XSS, uploads, sessions and encryption across JavaScript, Python, Go and PHP.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ItemList","name":"Loophole — All 50 Security Checks","numberOfItems":50,"itemListElement":[
+{"@type":"ListItem","position":1,"name":"SEC001 — Hardcoded API key / token / secret"},
+{"@type":"ListItem","position":2,"name":"SEC002 — Hardcoded password"},
+{"@type":"ListItem","position":3,"name":"SEC003 — Private key in source code"},
+{"@type":"ListItem","position":4,"name":"SEC004 — Hardcoded AWS access key ID"},
+{"@type":"ListItem","position":5,"name":"SEC005 — High-entropy secret-like string"},
+{"@type":"ListItem","position":6,"name":"SQLI001 — SQL injection via string building (JS/TS)"},
+{"@type":"ListItem","position":7,"name":"SQLI002 — SQL injection via string formatting (Python)"},
+{"@type":"ListItem","position":8,"name":"SQLI003 — SQL injection via string building (Go)"},
+{"@type":"ListItem","position":9,"name":"SQLI004 — SQL injection via string concatenation (PHP)"},
+{"@type":"ListItem","position":10,"name":"XSS001 — Dynamic HTML via innerHTML"},
+{"@type":"ListItem","position":11,"name":"XSS002 — Dynamic document.write()"},
+{"@type":"ListItem","position":12,"name":"XSS003 — dangerouslySetInnerHTML used"},
+{"@type":"ListItem","position":13,"name":"XSS004 — Unescaped echo of user input (PHP)"},
+{"@type":"ListItem","position":14,"name":"CMD001 — Command injection (JS/TS)"},
+{"@type":"ListItem","position":15,"name":"CMD002 — Command injection (Python)"},
+{"@type":"ListItem","position":16,"name":"CMD003 — Command injection (Go)"},
+{"@type":"ListItem","position":17,"name":"CMD004 — Command injection (PHP)"},
+{"@type":"ListItem","position":18,"name":"PATH001 — File access with user-influenced path"},
+{"@type":"ListItem","position":19,"name":"PATH002 — Path traversal combined with user input"},
+{"@type":"ListItem","position":20,"name":"RAND001 — Math.random() for tokens/secrets (JS)"},
+{"@type":"ListItem","position":21,"name":"RAND002 — Python random module for secrets"},
+{"@type":"ListItem","position":22,"name":"RAND003 — math/rand for secrets (Go)"},
+{"@type":"ListItem","position":23,"name":"CRY001 — MD5 used for password hashing"},
+{"@type":"ListItem","position":24,"name":"CRY002 — SHA-1 used for password hashing"},
+{"@type":"ListItem","position":25,"name":"CRY003 — Weak cipher (DES/3DES/RC4)"},
+{"@type":"ListItem","position":26,"name":"CRY004 — Hardcoded IV"},
+{"@type":"ListItem","position":27,"name":"EVAL001 — eval() with dynamic input"},
+{"@type":"ListItem","position":28,"name":"EVAL002 — new Function() with dynamic input"},
+{"@type":"ListItem","position":29,"name":"SSRF001 — SSRF: user-influenced URL in outbound request"},
+{"@type":"ListItem","position":30,"name":"AUTH001 — Sensitive route without visible auth"},
+{"@type":"ListItem","position":31,"name":"CORS001 — Wildcard CORS origin"},
+{"@type":"ListItem","position":32,"name":"JWT001 — JWT decoded without verification"},
+{"@type":"ListItem","position":33,"name":"TLS001 — TLS verification disabled"},
+{"@type":"ListItem","position":34,"name":"DBG001 — Debug mode enabled"},
+{"@type":"ListItem","position":35,"name":"ERR001 — Exception details leaked to client"},
+{"@type":"ListItem","position":36,"name":"PROTO001 — Prototype pollution"},
+{"@type":"ListItem","position":37,"name":"DESER001 — Unsafe deserialization"},
+{"@type":"ListItem","position":38,"name":"NOSQL001 — NoSQL injection"},
+{"@type":"ListItem","position":39,"name":"XXE001 — XML external entity"},
+{"@type":"ListItem","position":40,"name":"REDIR001 — Open redirect"},
+{"@type":"ListItem","position":41,"name":"ZIP001 — Zip Slip (archive extraction traversal)"},
+{"@type":"ListItem","position":42,"name":"CSRF001 — CSRF protection missing"},
+{"@type":"ListItem","position":43,"name":"UPL001 — File upload without validation"},
+{"@type":"ListItem","position":44,"name":"REDOS001 — ReDoS-prone regex"},
+{"@type":"ListItem","position":45,"name":"JWT002 — JWT none algorithm / weak secret"},
+{"@type":"ListItem","position":46,"name":"TLS002 — Weak/outdated TLS version"},
+{"@type":"ListItem","position":47,"name":"CRY005 — ECB mode or zero/static IV"},
+{"@type":"ListItem","position":48,"name":"LOG001 — Sensitive data written to logs"},
+{"@type":"ListItem","position":49,"name":"LDAP001 — LDAP injection"},
+{"@type":"ListItem","position":50,"name":"HDR001 — Missing security headers"}
+]}
+</script>
+<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#0a0c10; --bg2:#0d1117; --panel:#0d1117; --panel2:#11161f;
+  --line:#1c2330; --line2:#262f42;
+  --text:#e6edf3; --muted:#8b98a9; --faint:#5b6b80;
+  --blue:#58a6ff; --green:#3fb950; --purple:#bc8cff;
+  --crit:#f85149; --high:#d29922; --med:#58a6ff;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(88,166,255,.35)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono)}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;font-size:1.05rem}
+.brand:hover{text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:7px}
+.ver{font-family:var(--mono);font-size:.7rem;color:var(--green);border:1px solid rgba(63,185,80,.4);padding:2px 7px;border-radius:99px;margin-left:2px}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{color:var(--muted);font-size:.92rem}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+.gh-btn{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);color:var(--text)!important;padding:7px 14px;border-radius:8px;font-weight:600;font-size:.88rem}
+.gh-btn:hover{border-color:var(--faint)}
+@media(max-width:720px){.nav-links a:not(.gh-btn){display:none}}
+
+/* ---------- page head ---------- */
+.pagehead{position:relative;padding:64px 0 6px;overflow:hidden}
+.pagehead::before{content:"";position:absolute;inset:0;background:radial-gradient(620px 320px at 18% -6%,rgba(88,166,255,.13),transparent 60%),radial-gradient(520px 300px at 88% -10%,rgba(188,140,255,.10),transparent 60%);pointer-events:none}
+.pagehead-in{position:relative;z-index:1}
+.eyebrow{font-family:var(--mono);font-size:.8rem;color:var(--green);letter-spacing:.04em}
+.pagehead h1{font-size:2.9rem;line-height:1.1;letter-spacing:-.03em;font-weight:800;margin:16px 0 14px;max-width:760px}
+.pagehead h1 .grad{background:linear-gradient(92deg,#58a6ff 10%,#bc8cff 55%,#3fb950 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pagehead p.sub{color:var(--muted);font-size:1.1rem;max-width:700px}
+.pagehead p.sub strong{color:var(--text)}
+@media(max-width:820px){.pagehead h1{font-size:2.1rem}}
+
+/* ---------- filters ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:30px 0 4px}
+.fchip{font-size:.86rem;font-weight:600;padding:7px 15px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--muted)}
+.fchip.on{background:#e6edf3;color:#0a0c10;border-color:#e6edf3;font-weight:700}
+
+/* ---------- tool cards ---------- */
+section{padding:40px 0 4px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.sec-num{font-family:var(--mono);color:var(--green);font-size:.9rem}
+h2{font-size:1.6rem;letter-spacing:-.02em;font-weight:750}
+.cat-sub{color:var(--muted);max-width:760px;margin-bottom:20px;font-size:.98rem}
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:900px){.tgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.tgrid{grid-template-columns:1fr}}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column}
+.tool:hover{border-color:var(--line2)}
+.tool .ic{font-size:24px;margin-bottom:10px}
+.tool h3{font-size:1.02rem;line-height:1.3}
+.tool p{color:var(--muted);font-size:.9rem;margin-top:6px;flex:1}
+.tool .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.pill{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.03em}
+.pill.crit{color:var(--crit);border:1px solid rgba(248,81,73,.45);background:rgba(248,81,73,.08)}
+.pill.high{color:var(--high);border:1px solid rgba(210,153,34,.45);background:rgba(210,153,34,.08)}
+.pill.med{color:var(--med);border:1px solid rgba(88,166,255,.45);background:rgba(88,166,255,.08)}
+.code{color:var(--faint);font-size:.76rem;font-family:var(--mono)}
+.new{display:inline-block;background:var(--blue);color:#0a0c10;font-size:.62rem;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:99px;margin-left:7px;vertical-align:2px;font-family:var(--mono)}
+.strip{margin-top:48px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;font-size:1rem;color:var(--muted);text-align:center}
+.strip b{color:var(--green)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;background:var(--bg2)}
+.foot{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:24px}
+.foot h4{font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin-bottom:12px}
+.foot a{display:block;color:var(--muted);font-size:.92rem;margin-bottom:8px}
+.foot a:hover{color:var(--text)}
+.foot .about{color:var(--muted);font-size:.92rem;max-width:300px}
+.foot-base{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--faint);font-size:.84rem;font-family:var(--mono)}
+@media(max-width:820px){.foot{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole <span class="ver">v1.0.0</span></a>
+    <div class="nav-links">
+      <a href="/#rules">Rules</a>
+      <a href="/#usage">Usage</a>
+      <a href="/#action">GitHub Action</a>
+      <a href="/#contribute">Contribute</a>
+      <a class="gh-btn" href="https://github.com/rootsiemen/loophole"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="pagehead">
+  <div class="wrap pagehead-in">
+    <div class="eyebrow">// THE FULL CATALOG</div>
+    <h1>50 security tools. <span class="grad">Zero jargon.</span></h1>
+    <p class="sub">Every check Loophole runs, explained the way you'd explain it to a friend. Big plain name first — the technical code stays small, for those who want it. <strong>All 50 run together in every scan</strong>; nothing to select or configure.</p>
+    <div class="filters">
+      <span class="fchip on">All 50 tools</span><span class="fchip">🔑 Passwords &amp; Keys</span><span class="fchip">🗄️ Database</span><span class="fchip">🚪 Entry Points</span><span class="fchip">📁 Files</span><span class="fchip">🔐 Login &amp; Settings</span><span class="fchip">🔒 Encryption</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>🔑 Passwords &amp; Secret Keys</h2></div>
+    <p class="cat-sub">The #1 problem in AI-built apps — secrets typed straight into the code.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">🔑</div><h3>Secret Keys Left in Code</h3><p>API keys and tokens typed directly into your files — visible to anyone who ever sees the project.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">SEC001</span></div></div>
+      <div class="tool"><div class="ic">🔓</div><h3>Passwords Written in Code</h3><p>A real password sitting in a file instead of a private settings area.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">SEC002</span></div></div>
+      <div class="tool"><div class="ic">🗝️</div><h3>Private Key in the Project</h3><p>The master key file of your server, included in the code folder itself.</p><div class="foot"><span class="pill crit">CRITICAL</span><span class="code">SEC003</span></div></div>
+      <div class="tool"><div class="ic">☁️</div><h3>Cloud Keys Exposed</h3><p>Amazon/AWS access keys hardcoded — someone could run up cloud bills in your name.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">SEC004</span></div></div>
+      <div class="tool"><div class="ic">🎲</div><h3>Secret-Looking Strings</h3><p>Random-looking strings that behave exactly like passwords, even if nobody labelled them.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">SEC005</span></div></div>
+      <div class="tool"><div class="ic">📜</div><h3>Secrets Printed in Logs<span class="new">NEW</span></h3><p>Passwords or tokens written into log files, where they quietly stay forever.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">LOG001</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>🗄️ Database Safety</h2></div>
+    <p class="cat-sub">Ways a visitor can steal, change or delete your data through normal-looking forms.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">💉</div><h3>SQL Injection</h3><p>Typed input slips into database commands — the classic way entire customer lists get stolen. Covers JavaScript, Python, Go and PHP.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">SQLI001–004</span></div></div>
+      <div class="tool"><div class="ic">🍃</div><h3>NoSQL Injection<span class="new">NEW</span></h3><p>The same trick aimed at MongoDB-style databases — login forms are the favourite target.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">NOSQL001</span></div></div>
+      <div class="tool"><div class="ic">📇</div><h3>LDAP Injection<span class="new">NEW</span></h3><p>Company directory lookups built from typed input can be twisted to bypass logins.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">LDAP001</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>🚪 Hackers' Entry Points</h2></div>
+    <p class="cat-sub">Code that lets a visitor run things on your site or server they should never touch.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">🖥️</div><h3>Cross-Site Scripting (XSS)</h3><p>Comments and reviews shown without cleaning, so attackers can hide scripts in them. Four patterns covered.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">XSS001–004</span></div></div>
+      <div class="tool"><div class="ic">⌨️</div><h3>Command Injection</h3><p>Visitor input turned into server commands — the attacker ends up driving your machine.</p><div class="foot"><span class="pill crit">CRITICAL</span><span class="code">CMD001–004</span></div></div>
+      <div class="tool"><div class="ic">🧨</div><h3>Code Injection (eval)</h3><p>eval() and friends running text as code — if any of that text comes from a visitor, game over.</p><div class="foot"><span class="pill crit">CRITICAL</span><span class="code">EVAL001–002</span></div></div>
+      <div class="tool"><div class="ic">📡</div><h3>Server-Side Request Forgery</h3><p>Your server tricked into calling internal addresses it should never reveal or reach.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">SSRF001</span></div></div>
+      <div class="tool"><div class="ic">🧬</div><h3>Prototype Pollution<span class="new">NEW</span></h3><p>A JavaScript flaw where attackers quietly rewrite how your whole app behaves.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">PROTO001</span></div></div>
+      <div class="tool"><div class="ic">📄</div><h3>XML External Entity (XXE)<span class="new">NEW</span></h3><p>Uploaded XML files that make your server hand over its own private files.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">XXE001</span></div></div>
+      <div class="tool"><div class="ic">🌀</div><h3>Regex Denial of Service<span class="new">NEW</span></h3><p>A pattern so tangled that one crafted input can freeze your site for everyone.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">REDOS001</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>📁 Files &amp; Uploads</h2></div>
+    <p class="cat-sub">Anything your app opens, unzips or accepts from a visitor.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">🗂️</div><h3>Path Traversal</h3><p>Tricks like "../" that let visitors read files outside the folder they were allowed into.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">PATH001–002</span></div></div>
+      <div class="tool"><div class="ic">🤐</div><h3>Zip Slip<span class="new">NEW</span></h3><p>A booby-trapped ZIP that writes files anywhere on your server when opened.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">ZIP001</span></div></div>
+      <div class="tool"><div class="ic">📤</div><h3>Unsafe File Uploads<span class="new">NEW</span></h3><p>Upload boxes that never check what kind of file arrived — a favourite break-in route.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">UPL001</span></div></div>
+      <div class="tool"><div class="ic">📦</div><h3>Unsafe Deserialization<span class="new">NEW</span></h3><p>Saved-data formats (pickle, unserialize) that execute whatever an attacker packed inside.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">DESER001</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>🔐 Login, Sessions &amp; Settings</h2></div>
+    <p class="cat-sub">The quiet switches that decide whether your logins and settings actually protect you.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">🎫</div><h3>Login Tokens Never Verified</h3><p>JWT tokens read but never actually checked — a forged token sails straight in.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">JWT001</span></div></div>
+      <div class="tool"><div class="ic">🚫</div><h3>JWT "None" / Weak Secret<span class="new">NEW</span></h3><p>Settings that accept unsigned tokens, or secrets so short anyone can guess them.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">JWT002</span></div></div>
+      <div class="tool"><div class="ic">🧑‍💻</div><h3>Weak Login Patterns</h3><p>Authentication shortcuts that look fine and fail quietly under attack.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">AUTH001</span></div></div>
+      <div class="tool"><div class="ic">🛡️</div><h3>Missing CSRF Protection<span class="new">NEW</span></h3><p>Without it, a malicious page can make your logged-in visitors act without knowing.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">CSRF001</span></div></div>
+      <div class="tool"><div class="ic">🌐</div><h3>Wide-Open CORS</h3><p>Your app answering data requests from literally any website on the internet.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">CORS001</span></div></div>
+      <div class="tool"><div class="ic">↪️</div><h3>Open Redirect<span class="new">NEW</span></h3><p>Links on your own trusted domain that silently bounce visitors to scam sites.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">REDIR001</span></div></div>
+      <div class="tool"><div class="ic">🧱</div><h3>Missing Security Headers<span class="new">NEW</span></h3><p>Standard browser protections (CSP, frame guards) simply never switched on.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">HDR001</span></div></div>
+      <div class="tool"><div class="ic">🐞</div><h3>Debug Mode Left On</h3><p>Developer debug screens still active in the live app — they leak how everything works.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">DBG001</span></div></div>
+      <div class="tool"><div class="ic">💬</div><h3>Error Details Shown to Visitors</h3><p>Full technical error messages handed to strangers — a map for attackers.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">ERR001</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>🔒 Encryption &amp; Connection Safety</h2></div>
+    <p class="cat-sub">How passwords are stored and how data travels.</p>
+    <div class="tgrid">
+      <div class="tool"><div class="ic">🔐</div><h3>MD5 Password Storage</h3><p>Passwords hashed with MD5 — crackable in seconds with free tools.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">CRY001</span></div></div>
+      <div class="tool"><div class="ic">🔏</div><h3>SHA-1 Password Storage</h3><p>SHA-1 is retired for passwords for a reason — nearly as fast to crack as MD5.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">CRY002</span></div></div>
+      <div class="tool"><div class="ic">📻</div><h3>Ancient Ciphers (DES / RC4)</h3><p>Encryption methods from another era, broken by modern computers.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">CRY003</span></div></div>
+      <div class="tool"><div class="ic">🔁</div><h3>Hardcoded IV / ECB Mode<span class="new">NEW</span></h3><p>Encryption done with a fixed starting value, or ECB mode that leaks patterns in your data.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">CRY004–005</span></div></div>
+      <div class="tool"><div class="ic">🔌</div><h3>Secure Connection Check Switched Off</h3><p>TLS verification disabled — your app will happily talk to a fake server.</p><div class="foot"><span class="pill high">HIGH</span><span class="code">TLS001</span></div></div>
+      <div class="tool"><div class="ic">📶</div><h3>Outdated TLS Versions<span class="new">NEW</span></h3><p>Old connection protocols (TLS 1.0/1.1) that browsers and attackers both left behind.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">TLS002</span></div></div>
+      <div class="tool"><div class="ic">🎰</div><h3>Predictable Random Values</h3><p>"Random" codes and tokens an attacker can guess — session IDs, reset links, OTPs.</p><div class="foot"><span class="pill med">MEDIUM</span><span class="code">RAND001–003</span></div></div>
+    </div>
+  </section>
+
+  <div class="strip">Every scan runs <b>all 50 tools together</b> — point Loophole at your project, get one report with a plain-English why and a concrete fix for every finding.</div>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="/" style="margin-bottom:12px"><img src="https://raw.githubusercontent.com/rootsiemen/loophole/main/assets/logo.png" alt="Loophole logo">Loophole</a>
+        <p class="about">A zero-dependency static security scanner in a single Python file. Built with the standard library only — because your security tool shouldn't be a supply-chain risk itself.</p>
+      </div>
+      <div><h4>Project</h4><a href="https://github.com/rootsiemen/loophole">Repository</a><a href="https://github.com/rootsiemen/loophole/releases">Releases</a><a href="https://github.com/rootsiemen/loophole/issues">Issues</a><a href="/#rules">Rule catalog</a></div>
+      <div><h4>Resources</h4><a href="/tools.html">All 50 tools</a><a href="/other-tools.html">Other tools</a><a href="/#usage">Usage guide</a><a href="/#action">GitHub Action</a><a href="https://github.com/rootsiemen/loophole/blob/main/CONTRIBUTING.md">Contributing</a></div>
+      <div><h4>Trust</h4><a href="/about.html">About</a><a href="/privacy.html">Privacy policy</a><a href="/contact.html">Contact</a><a href="https://github.com/rootsiemen/loophole/blob/main/SECURITY.md">Security policy</a><a href="https://github.com/rootsiemen/loophole/blob/main/LICENSE">MIT License</a></div>
+    </div>
+    <div class="foot-base"><span>© 2026 Loophole — created &amp; maintained by <a href="https://github.com/rootsiemen" style="display:inline;color:var(--muted)">@rootsiemen</a></span><span>PYTHON STDLIB ONLY · NO TELEMETRY · NO ACCOUNTS</span></div>
+  </div>
+</footer>
+</body>
+</html>

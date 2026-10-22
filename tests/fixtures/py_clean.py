@@ -5,9 +5,18 @@ import hashlib
 import secrets
 import requests
 from flask import Flask, request
+from flask_wtf.csrf import CSRFProtect
 from functools import wraps
 
 app = Flask(__name__)
+CSRFProtect(app)
+
+
+@app.after_request
+def security_headers(resp):
+    resp.headers["Content-Security-Policy"] = "default-src 'self'"
+    resp.headers["X-Frame-Options"] = "DENY"
+    return resp
 
 DB_PASSWORD = os.environ["DB_PASSWORD"]
 
@@ -70,3 +79,40 @@ def calc():
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1")
+
+
+# --- 2026 expansion: safe counterparts (must stay silent) ---
+import re
+import yaml
+import zipfile
+from werkzeug.utils import secure_filename
+
+cfg = yaml.safe_load(text)  # DESER001-safe
+
+
+def unzip(zf, dest):
+    for name in zf.namelist():
+        target = os.path.abspath(os.path.join(dest, name))
+        root = os.path.abspath(dest)
+        if os.path.commonpath([target, root]) == root:
+            zf.extract(name, dest)  # ZIP001-safe: path-validated
+
+
+ALLOWED_EXTENSIONS = {"pdf", "png"}
+
+
+def allowed_file(name):
+    return "." in name and \
+        name.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/upload', methods=['POST'])
+@login_required
+def upload():
+    f = request.files.get('doc')
+    if f and allowed_file(f.filename):  # UPL001-safe: allowlist checked
+        f.save('/uploads/' + secure_filename(f.filename))
+    return "ok"
+
+
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")  # REDOS001-safe
