@@ -177,7 +177,7 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
     <h1>50 security tools. <span class="grad">Zero jargon.</span></h1>
     <p class="sub">Every check Loophole runs, explained the way you'd explain it to a friend. Big plain name first — the technical code stays small, for those who want it. <strong>All 50 run together in every scan</strong>; nothing to select or configure.</p>
     <div class="filters">
-      <span class="fchip on" data-f="all">All 50 tools</span><span class="fchip" data-f="keys">🔑 Passwords &amp; Keys</span><span class="fchip" data-f="db">🗄️ Database</span><span class="fchip" data-f="entry">🚪 Entry Points</span><span class="fchip" data-f="files">📁 Files</span><span class="fchip" data-f="login">🔐 Login &amp; Settings</span><span class="fchip" data-f="crypto">🔒 Encryption</span>
+      <span class="fchip on" data-f="all">All 50 tools</span><span class="fchip" data-f="new">🆕 15 New Tools</span><span class="fchip" data-f="keys">🔑 Passwords &amp; Keys</span><span class="fchip" data-f="db">🗄️ Database</span><span class="fchip" data-f="entry">🚪 Entry Points</span><span class="fchip" data-f="files">📁 Files</span><span class="fchip" data-f="login">🔐 Login &amp; Settings</span><span class="fchip" data-f="crypto">🔒 Encryption</span>
     </div>
   </div>
 </header>
@@ -284,14 +284,23 @@ footer{border-top:1px solid var(--line);margin-top:64px;padding:38px 0 46px;back
 (function(){
   var chips=document.querySelectorAll('.fchip');
   var secs=document.querySelectorAll('section[data-cat]');
+  function show(f){
+    secs.forEach(function(s){
+      var any=false;
+      s.querySelectorAll('.tool').forEach(function(card){
+        var isNew=!!card.querySelector('.new');
+        var on=(f==='all')||(f==='new'?isNew:(s.getAttribute('data-cat')===f));
+        card.style.display=on?'':'none';
+        if(on)any=true;
+      });
+      s.style.display=any?'':'none';
+    });
+  }
   chips.forEach(function(chip){
     chip.addEventListener('click',function(){
       chips.forEach(function(c){c.classList.remove('on');});
       chip.classList.add('on');
-      var f=chip.getAttribute('data-f');
-      secs.forEach(function(s){
-        s.style.display=(f==='all'||s.getAttribute('data-cat')===f)?'':'none';
-      });
+      show(chip.getAttribute('data-f'));
     });
   });
 })();
