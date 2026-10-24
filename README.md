@@ -4,6 +4,8 @@
 
 This project is tested with BrowserStack.
 
+[![Build with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/rootsiemen/loophole)
+
 **Loophole** is a zero-dependency static security scanner that finds the holes
 in your code — hardcoded secrets, SQL injection, XSS, command injection, weak
 crypto and more — across **JavaScript/TypeScript, Python, Go and PHP**.
