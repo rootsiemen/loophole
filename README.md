@@ -2,7 +2,7 @@
 
 🌐 **Website:** https://rootsiemen-portfolio-sf-c596.vercel.app · 📦 **Latest release:** [v1.0.0](https://github.com/rootsiemen/loophole/releases/tag/v1.0.0)
 
-This project is tested with BrowserStack
+This project is tested with BrowserStack.
 
 **Loophole** is a zero-dependency static security scanner that finds the holes
 in your code — hardcoded secrets, SQL injection, XSS, command injection, weak
