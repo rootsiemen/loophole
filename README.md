@@ -262,3 +262,5 @@ clean (exit 0).
 ## License
 
 MIT — see `LICENSE`. Loophole is free and non-commercial: no paid tiers, no telemetry, no usage restrictions beyond the MIT terms.
+
+This project is tested with BrowserStack.
