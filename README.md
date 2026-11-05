@@ -1,6 +1,6 @@
 # 🕳️ Loophole
 
-🌐 **Website:** https://rootsiemen-portfolio-sf-c596.vercel.app · 📦 **Latest release:** [v1.0.0](https://github.com/rootsiemen/loophole/releases/tag/v1.0.0)
+🌐 **Docs:** https://loophole-sf-c596.vercel.app · 📦 **Latest release:** [v1.0.0](https://github.com/rootsiemen/loophole/releases/tag/v1.0.0)
 
 This project is tested with BrowserStack.
 
@@ -264,3 +264,7 @@ clean (exit 0).
 ## License
 
 MIT — see `LICENSE`. Loophole is free and non-commercial: no paid tiers, no telemetry, no usage restrictions beyond the MIT terms.
+
+---
+
+Built by [WebStore Pro](https://frinjo.me) — full-stack web development and free online tools at [Frinjo](https://frinjo.me).
