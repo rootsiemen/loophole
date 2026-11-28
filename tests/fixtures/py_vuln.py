@@ -52,6 +52,14 @@ def calc():
     return str(eval(expr))  # EVAL001 critical (tainted)
 
 
+@app.route('/run')
+def run():
+    code = request.args.get('code')  # tainted
+    exec(code)  # EVAL001 critical (tainted)
+    compiled = compile(code, '<s>', 'eval')  # EVAL001 critical (tainted)
+    return str(compiled)
+
+
 def make_otp():
     return str(random.randint(100000, 999999))  # RAND002
 

@@ -49,6 +49,11 @@ def run():
     return "ok"
 
 
+def run_literal():
+    exec("x = 1")  # EVAL001-safe: literal string, not dynamic
+    compile("x = 1", "<s>", "exec")  # EVAL001-safe: literal source
+
+
 @app.route('/fetch')
 def fetch_url():
     r = requests.get("https://api.example.com/data", timeout=10)

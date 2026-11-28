@@ -1251,25 +1251,36 @@ def rule_CRY004(ctx):
 # ---------------------------------------------------------------------------
 
 def rule_EVAL001(ctx):
-    """eval() with dynamic input."""
+    """eval() / exec() / compile() with dynamic input."""
     out = []
     for i, line in enumerate(ctx.lines, 1):
-        m = re.search(r"(?<![\w.])eval\s*\(", line)
-        if not m:
-            continue
-        args = call_args(line, r"(?<![\w.])eval")
-        if args is None or is_string_literal(args):
-            continue  # eval("1+1") — smelly but not exploitable
-        taint_var, taint_src = ctx.flow(args)
-        if re.search(r"\$\w+|\+\s*['\"]|['\"]\s*\+|\$\{|%s|f['\"]", args) \
-                or taint_var or taint_src or re.search(r"[A-Za-z_$][\w$]*", args):
-            out.append(ctx.hit(
-                "EVAL001", "critical", "eval() with dynamic input", i,
-                "eval() runs attacker-controlled strings as code in the "
-                "app's context — arbitrary code execution.",
-                "Never eval() dynamic input. Use JSON.parse, ast.literal_eval"
-                ", or a proper parser instead.",
-                taint=_taint_note(taint_var, taint_src, "eval()")))
+        for builtin in ("eval", "exec", "compile"):
+            # exec()/compile() are Python builtins: JS exec is child_process
+            # (CMD001's territory) and PHP has no builtin by these names.
+            if builtin != "eval" and ctx.lang != "py":
+                continue
+            m = re.search(r"(?<![\w.])" + builtin + r"\s*\(", line)
+            if not m:
+                continue
+            args = call_args(line, r"(?<![\w.])" + builtin)
+            if args is None:
+                continue
+            if builtin == "compile":
+                # Only the source argument matters; the mode/filename args
+                # are literals by construction.
+                args = _first_arg(args)
+            if is_string_literal(args):
+                continue  # eval("1+1") — smelly but not exploitable
+            taint_var, taint_src = ctx.flow(args)
+            if re.search(r"\$\w+|\+\s*['\"]|['\"]\s*\+|\$\{|%s|f['\"]", args) \
+                    or taint_var or taint_src or re.search(r"[A-Za-z_$][\w$]*", args):
+                out.append(ctx.hit(
+                    "EVAL001", "critical", f"{builtin}() with dynamic input", i,
+                    f"{builtin}() runs attacker-controlled strings as code "
+                    "in the app's context — arbitrary code execution.",
+                    f"Never {builtin}() dynamic input. Use JSON.parse, "
+                    "ast.literal_eval, or a proper parser instead.",
+                    taint=_taint_note(taint_var, taint_src, f"{builtin}()")))
     return out
 
 
